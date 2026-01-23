@@ -1,0 +1,894 @@
+@import "tailwindcss";
+ 
+/* === Global Height Setup === */
+html,
+body,
+#__next {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+ 
+/* === Light Theme (Default Green) === */
+:root {
+  --background: #ffffff;
+  --foreground: #0B1120;
+  --card-bg: #ffffff;
+  --border-color: #d1fae5;
+  --theme-color: #10b981;
+  --theme-color-light: #6ee7b7;
+  --theme-color-dark: #059669;
+  --theme-gradient: linear-gradient(135deg, #10b981, #6ee7b7);
+}
+
+/* === Dark Mode Theme (Default Green) === */
+.dark {
+  --background: #0B1120;
+  --foreground: #ededed;
+  --card-bg: #1a1f2e;
+  --border-color: #064e3b;
+}
+
+/* === Color Palette System === */
+/* Green Theme (Default) */
+:root[data-theme="green"],
+:root {
+  --theme-color: #10b981;
+  --theme-color-light: #6ee7b7;
+  --theme-color-dark: #059669;
+  --theme-gradient: linear-gradient(135deg, #10b981, #6ee7b7);
+}
+ 
+/* Green Theme */
+:root[data-theme="green"] {
+  --theme-color: #10b981;
+  --theme-color-light: #34d399;
+  --theme-color-dark: #059669;
+  --theme-gradient: linear-gradient(135deg, #10b981, #34d399);
+}
+ 
+/* Orange Theme */
+:root[data-theme="orange"] {
+  --theme-color: #f97316;
+  --theme-color-light: #fb923c;
+  --theme-color-dark: #ea580c;
+  --theme-gradient: linear-gradient(135deg, #f97316, #fb923c);
+}
+ 
+/* Pink Theme */
+:root[data-theme="pink"] {
+  --theme-color: #ec4899;
+  --theme-color-light: #f472b6;
+  --theme-color-dark: #db2777;
+  --theme-gradient: linear-gradient(135deg, #ec4899, #f472b6);
+}
+ 
+/* Purple Theme */
+:root[data-theme="purple"] {
+  --theme-color: #8b5cf6;
+  --theme-color-light: #a78bfa;
+  --theme-color-dark: #7c3aed;
+  --theme-gradient: linear-gradient(135deg, #8b5cf6, #a78bfa);
+}
+ 
+html.dark,
+html.dark body {
+  background: #0B1120 !important;
+  color: #ededed !important;
+}
+ 
+html:not(.dark),
+html:not(.dark) body {
+  background: transparent !important;
+  color: #0B1120 !important;
+}
+ 
+/* === Body & HTML === */
+html {
+  background: transparent;
+}
+ 
+body {
+  background: transparent;
+  color: var(--foreground) !important;
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+ 
+/* === Main Container === */
+#__next,
+main {
+  background: transparent;
+  color: var(--foreground) !important;
+}
+ 
+/* === SELECTIVE BACKGROUND OVERRIDES === */
+/* Only override solid gray/neutral backgrounds on MAIN containers, NOT gradient cards */
+.bg-white:not([class*="from-"]):not([class*="to-"]):not([class*="gradient"]),
+.bg-gray-50:not([class*="from-"]):not([class*="to-"]),
+.bg-gray-100:not([class*="from-"]):not([class*="to-"]),
+.bg-gray-200:not([class*="from-"]):not([class*="to-"]) {
+  background-color: var(--card-bg) !important;
+}
+ 
+.bg-black,
+.bg-gray-800,
+.bg-gray-900,
+.bg-gray-950 {
+  background-color: var(--background) !important;
+}
+ 
+/* === CRITICAL: PRESERVE ALL COLORED GRADIENT BACKGROUNDS === */
+.bg-gradient-to-r,
+.bg-gradient-to-l,
+.bg-gradient-to-t,
+.bg-gradient-to-b,
+.bg-gradient-to-br,
+.bg-gradient-to-bl,
+.bg-gradient-to-tr,
+.bg-gradient-to-tl {
+  background: revert !important;
+  background-color: revert !important;
+}
+ 
+/* Specifically handle gray-to-white gradients for source cards */
+.bg-gradient-to-r.from-gray-50.to-white,
+.bg-gradient-to-br.from-gray-50.to-white {
+  background: linear-gradient(to right, rgb(249, 250, 251), rgb(255, 255, 255)) !important;
+}
+ 
+.dark .bg-gradient-to-r.from-gray-50.to-white {
+  background: linear-gradient(to right, rgb(31, 41, 55), rgb(26, 31, 46)) !important;
+}
+ 
+.dark .bg-gradient-to-br.from-gray-50.to-white {
+  background: linear-gradient(to bottom right, rgb(31, 41, 55), rgb(26, 31, 46)) !important;
+}
+ 
+/* Dark mode: keep colored gradients but with darker variants */
+.dark .bg-gradient-to-br.from-amber-50.to-orange-50 {
+  background: linear-gradient(to bottom right, rgb(69, 26, 3), rgb(67, 20, 7)) !important;
+}
+ 
+.dark .bg-gradient-to-br.from-green-50.to-emerald-50 {
+  background: linear-gradient(to bottom right, rgb(5, 46, 22), rgb(6, 78, 59)) !important;
+}
+ 
+.dark .bg-gradient-to-br.from-gray-50.to-gray-100 {
+  background: linear-gradient(to bottom right, rgb(31, 41, 55), rgb(55, 65, 81)) !important;
+}
+ 
+/* === PRESERVE COLORED BORDERS === */
+.border-amber-200,
+.border-orange-200,
+.border-green-200,
+.border-emerald-200,
+.border-blue-200,
+.border-purple-200,
+.border-indigo-200,
+.border-pink-200,
+.border-red-200,
+.border-yellow-200,
+.border-teal-200,
+.border-cyan-200 {
+  border-color: revert !important;
+}
+ 
+/* Dark mode colored borders */
+.dark .border-amber-200 {
+  border-color: rgb(146, 64, 14) !important;
+}
+ 
+.dark .border-green-200 {
+  border-color: rgb(21, 128, 61) !important;
+}
+ 
+.dark .border-gray-200 {
+  border-color: rgb(75, 85, 99) !important;
+}
+ 
+/* === PRESERVE COLORED TEXT IN STATS === */
+.text-amber-600,
+.text-orange-600,
+.text-green-600,
+.text-emerald-600,
+.text-blue-600,
+.text-indigo-600,
+.text-purple-600,
+.text-pink-600,
+.text-red-600,
+.text-yellow-600 {
+  color: revert !important;
+}
+ 
+/* Dark mode colored text adjustments */
+.dark .text-amber-600 {
+  color: rgb(217, 119, 6) !important;
+}
+ 
+.dark .text-green-600 {
+  color: rgb(34, 197, 94) !important;
+}
+ 
+.dark .text-blue-600 {
+  color: rgb(96, 165, 250) !important;
+}
+ 
+.bg-gray-800\/40,
+.bg-gray-800\/60 {
+  background-color: rgba(31, 41, 55, 0.4) !important;
+}
+ 
+.dark .bg-gray-800\/40 {
+  background-color: rgba(31, 41, 55, 0.4) !important;
+}
+ 
+.dark .bg-gray-800\/60 {
+  background-color: rgba(31, 41, 55, 0.6) !important;
+}
+ 
+/* === Topbar/Header backgrounds === */
+header {
+  background-color: var(--card-bg) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border-color) !important;
+}
+ 
+/* === Force theme colors ONLY inside this wrapper === */
+.theme-force-color div {
+  color: inherit;
+}
+
+/* Labels only inside that wrapper */
+.theme-force-color label {
+  color: var(--foreground) !important;
+}
+
+
+ 
+/* === Dropdown menus === */
+.absolute.bg-white,
+.absolute.dark\:bg-gray-800 {
+  background-color: var(--card-bg) !important;
+}
+ 
+/* === TEXT COLOR OVERRIDES === */
+.text-gray-900:not(.rounded-full):not([style*="backgroundColor"]),
+.text-gray-800:not(.rounded-full):not([style*="backgroundColor"]),
+.text-gray-700:not(.rounded-full):not([style*="backgroundColor"]),
+.text-gray-600:not(.rounded-full):not([style*="backgroundColor"]),
+.text-black:not(.rounded-full):not([style*="backgroundColor"]) {
+  color: var(--foreground) !important;
+}
+.text-white {
+  color: var(--foreground) !important;
+}
+ 
+/* Exception: Keep white text on colored backgrounds */
+.from-blue-500 .text-white,
+.from-purple-500 .text-white,
+.from-green-500 .text-white,
+.from-orange-500 .text-white,
+.bg-blue-500 .text-white,
+.bg-purple-500 .text-white,
+.bg-green-500 .text-white,
+.bg-orange-500 .text-white,
+.to-cyan-500 .text-white,
+.to-pink-500 .text-white,
+.to-emerald-500 .text-white,
+.to-red-500 .text-white {
+  color: #ffffff !important;
+}
+ 
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+  color: var(--foreground) !important;
+}
+ 
+/* Keep gray-400, gray-500 as secondary colors */
+.text-gray-400,
+.text-gray-500 {
+  color: #9ca3af !important;
+}
+ 
+.dark .text-gray-400,
+.dark .text-gray-500 {
+  color: #6b7280 !important;
+}
+ 
+/* Keep white/60 opacity text */
+.text-white\/60 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+ 
+.dark .text-white\/60 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+ 
+/* === BORDER OVERRIDES === */
+.border-gray-200,
+.border-gray-300,
+.border-gray-700,
+.border-gray-800,
+.border-gray-100,
+.border-gray-700\/50 {
+  border-color: var(--border-color) !important;
+}
+ 
+.dark .border-gray-700\/50 {
+  border-color: rgba(55, 65, 81, 0.5) !important;
+}
+ 
+/* === Dashboard Container === */
+.dashboard-container {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  transition: all 0.5s ease;
+}
+ 
+/* === Card Elements === */
+.dashboard-card,
+.analytics-card,
+.widget,
+.stat-card {
+  background: var(--card-bg) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+ 
+/* === Typography === */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--foreground) !important;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+ 
+/* Exception: Keep gradient text */
+.bg-gradient-to-r.from-blue-400.via-purple-400.to-pink-400.bg-clip-text.text-transparent,
+.bg-gradient-to-r.from-blue-600.via-purple-600.to-pink-600.bg-clip-text.text-transparent,
+.bg-clip-text.text-transparent {
+  color: transparent !important;
+}
+ 
+p {
+  color: var(--foreground) !important;
+}
+ 
+label {
+  color: var(--foreground) !important;
+}
+ 
+/* === Form Elements === */
+input,
+select,
+textarea {
+  background: var(--card-bg) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+ 
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--theme-color) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-color) 10%, transparent) !important;
+}
+ 
+input::placeholder,
+textarea::placeholder {
+  color: #666666 !important;
+}
+
+/* Create Reminder Page - Force Black Text */
+.reminder-create-container input,
+.reminder-create-container textarea {
+  color: #000000 !important;
+}
+
+.reminder-create-container input::placeholder,
+.reminder-create-container textarea::placeholder {
+  color: #666666 !important;
+}
+
+/* Force dark green for Create Reminder headings/helpers */
+.reminder-create-container .force-dark-green {
+  color: #065f46 !important;
+}
+
+/* Force black for specific reminder texts/icons even in dark mode */
+.reminder-create-container .force-black {
+  color: #000000 !important;
+}
+
+/* Stronger enforcement for icons and nested elements */
+.reminder-create-container .force-black,
+.reminder-create-container .force-black * {
+  color: #000000 !important;
+  fill: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* Global force dark green for headings/helpers */
+.force-dark-green {
+  color: #065f46 !important;
+}
+ 
+/* === Buttons with Theme Colors === */
+button {
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+ 
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+ 
+/* Theme-aware gradient buttons */
+.bg-gradient-to-r.from-indigo-600.to-purple-600,
+button.bg-gradient-to-r.from-indigo-600.to-purple-600 {
+  background: var(--theme-gradient) !important;
+}
+ 
+/* === Active states using theme color === */
+aside a.active,
+nav a.active,
+aside a[aria-current="page"],
+nav a[aria-current="page"] {
+  background: color-mix(in srgb, var(--theme-color) 10%, transparent) !important;
+  color: var(--theme-color) !important;
+  font-weight: 600;
+}
+ 
+/* === Enhanced hover states === */
+button.hover\:border-blue-300:hover,
+button.hover\:shadow-lg:hover {
+  border-color: var(--theme-color-light) !important;
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--theme-color) 15%, transparent),
+              0 4px 6px -2px color-mix(in srgb, var(--theme-color) 10%, transparent) !important;
+}
+ 
+/* === Sidebar Styling === */
+aside,
+nav {
+  background: var(--card-bg) !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+ 
+/* === Smooth Transitions === */
+*:not([class*="gradient"]):not([class*="from-"]):not([class*="to-"]) {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+ 
+/* === Scrollbar Styling === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+ 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+ 
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+ 
+/* === Selection === */
+::selection {
+  background: var(--theme-color);
+  color: white;
+}
+ 
+/* === Focus visible === */
+*:focus-visible {
+  outline: 2px solid var(--theme-color);
+  outline-offset: 2px;
+}
+ 
+/* === KEEP ALL COLORED GRADIENTS WORKING === */
+.bg-gradient-to-br.from-blue-500,
+.bg-gradient-to-br.from-blue-600,
+.bg-gradient-to-br.from-purple-500,
+.bg-gradient-to-br.from-green-500,
+.bg-gradient-to-br.from-orange-500,
+.bg-gradient-to-r.from-blue-500,
+.bg-gradient-to-r.from-green-500,
+.bg-gradient-to-r.from-indigo-500,
+.to-cyan-500,
+.to-pink-500,
+.to-emerald-500,
+.to-red-500,
+.to-purple-600,
+.via-purple-500,
+.via-purple-600 {
+  /* Let these work naturally */
+}
+ 
+/* === Keep colored backgrounds === */
+.bg-blue-500,
+.bg-blue-600,
+.bg-purple-500,
+.bg-purple-600,
+.bg-green-500,
+.bg-orange-500,
+.bg-red-500,
+.bg-indigo-500,
+.bg-emerald-500,
+.text-blue-400,
+.text-purple-400,
+.text-pink-400,
+.hover\:text-blue-400:hover {
+  /* Keep colored elements as-is */
+}
+ 
+/* === Settings Page Specific === */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+ 
+.group:hover {
+  border-color: rgb(75, 85, 99) !important;
+}
+ 
+.dark .group:hover {
+  border-color: rgb(75, 85, 99) !important;
+}
+ 
+.group:hover .group-hover\:translate-x-1 {
+  transform: translateX(0.25rem);
+}
+ 
+.group:hover .group-hover\:text-blue-400 {
+  color: rgb(96, 165, 250) !important;
+}
+ 
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
+}
+ 
+/* === Color Palette Selector Styling === */
+.color-palette-option {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+ 
+.color-palette-option:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+ 
+.color-palette-option.active {
+  border-color: var(--theme-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-color) 20%, transparent);
+  transform: scale(1.05);
+}
+ 
+
+/* ===========================================================
+   ✅ NEW — FULL DARK MODE FOR CHATBOT BUILDER (IMPORTANT)
+   Makes builder UI readable + adds botpress-like dark mode
+
+/* Main wrapper */
+.builder-container {
+  background-color: #111 !important;
+  color: #e6e6e6 !important;
+}
+
+/* Sidebar (keep dark) */
+.builder-sidebar {
+  background-color: #181818 !important;
+  border-right: 1px solid #2e2e2e !important;
+  color: #e6e6e6 !important;
+}
+
+.builder-sidebar input,
+.builder-sidebar select,
+.builder-sidebar textarea {
+  background-color: #101010 !important;
+  border: 1px solid #2f2f2f !important;
+  color: #e6e6e6 !important;
+}
+
+/* Inspector */
+.builder-inspector {
+  background-color: #181818 !important;
+  border-left: 1px solid #2e2e2e !important;
+  color: #e6e6e6 !important;
+}
+
+/* ✅ BRIGHTER CANVAS — nodes now visible clearly */
+.builder-canvas {
+  background-color: #202020 !important;
+  background-image: radial-gradient(#3b3b3b 1px, transparent 0) !important;
+  background-size: 28px 28px !important;
+}
+
+/* ✅ NODE CARD — lighter, white-like card */
+.builder-node {
+  background-color: #2d2d2d !important;
+  color: #f9f9f9 !important;
+  border: 1px solid #555 !important;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.builder-node:hover {
+  border-color: #7c7c7c !important;
+}
+
+.builder-node-title {
+  font-weight: 600;
+  color: #ffffff !important;
+}
+
+/* Inputs inside nodes */
+.builder-node input,
+.builder-node textarea {
+  background-color: #1a1a1a !important;
+  border: 1px solid #444 !important;
+  color: #fff !important;
+}
+
+/* ✅ Handles — brighter purple */
+.react-flow__handle {
+  background-color: #8b5cf6 !important;
+  border: 1px solid #c4b5fd !important;
+}
+
+/* ✅ Edges — bright + visible */
+.react-flow__edge-path {
+  stroke: #c4b5fd !important;
+  stroke-width: 2.2 !important;
+}
+
+/* Controls */
+.react-flow__controls {
+  background: #2a2a2a !important;
+  border: 1px solid #444 !important;
+}
+
+.react-flow__controls button {
+  background: #1b1b1b !important;
+  color: #fff !important;
+  border: 1px solid #333 !important;
+}
+.page-dimmed {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+/* 🛠 FIX: Do NOT override Tailwind badge colors */
+.badge-source {
+  background-color: unset !important;
+  color: unset !important;
+  border-color: unset !important;
+}
+/* Don't override campaign page gradients */
+.campaign-page .bg-gradient-to-r,
+.campaign-page .bg-gradient-to-l,
+.campaign-page .bg-gradient-to-t,
+.campaign-page .bg-gradient-to-b,
+.campaign-page .bg-gradient-to-br {
+  background: revert-layer !important;
+}
+/* NUCLEAR OPTION - Campaign page button text override */
+.campaign-page .pagination-btn.text-white,
+button.pagination-btn.text-white,
+.pagination-btn .text-white,
+.pagination-btn span,
+.pagination-btn svg {
+  color: #ffffff !important;
+} /* FIX: Keep campaign page dropdown text readable */
+.campaign-page .views-dropdown * {
+  color: #111827 !important; /* Light mode */
+}
+
+.dark .campaign-page .views-dropdown * {
+  color: #ffffff !important; /* Dark mode */
+/* Make WhatsApp table rows black on hover in dark mode */
+.dark .whatsapp-row:hover {
+  background-color: #000000;
+}
+/* Make table buttons transparent in dark mode */
+.dark .btn-table {
+  background-color: transparent !important;
+}
+
+.dark .btn-table:hover {
+  background-color: transparent !important;
+}
+/* WhatsApp Forms table header: dark mode */
+.dark .flows-header {
+  background-color: #000000 !important;
+}
+
+.dark .flows-header-row th {
+  color: #f9fafb !important;
+}
+}
+/* ===== FORCE DARK MODE TABLE HOVER FIX ===== */
+@media (prefers-color-scheme: dark) {
+  table tr:hover,
+  table tr:hover td,
+  table tbody tr:hover,
+  table tbody tr:hover td {
+    background-color: #0f172a !important; /* slate-900 */
+  }
+}
+/* ===== FORCE DARK MODE TABLE HOVER BACKGROUND (TAILWIND DARK CLASS) ===== */
+.dark table tr:hover,
+.dark table tr:hover td,
+.dark table tbody tr:hover,
+.dark table tbody tr:hover td {
+  background-color: #0f172a !important; /* slate-900 */
+}
+/* ===============================
+   FORCE DARK MODE FIXES
+   =============================== */
+
+/* Force dark background for create column card */
+html.dark .create-column-card {
+  background-color: #0f172a !important; /* slate-900 */
+  border-color: #1e293b !important;     /* slate-800 */
+  color: #e5e7eb !important;            /* gray-200 */
+}
+
+/* Force Create Column button text to BLACK */
+html.dark .create-column-button {
+  color: #000000 !important;
+}
+
+/* Disabled button visibility fix */
+html.dark .create-column-button:disabled {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #000000 !important;
+  opacity: 1 !important;
+}
+/* =========================================
+   FORCE BLACK TEXT INSIDE FAQ MODAL
+   ========================================= */
+
+/* Light + Dark mode: force black text */
+.faq-modal,
+.faq-modal * {
+  color: #000000 !important;
+}
+
+/* Keep submit button text white */
+.faq-modal button[type="submit"],
+.faq-modal button[type="submit"] * {
+  color: #ffffff !important;
+}
+
+/* Keep icons readable */
+.faq-modal svg {
+  color: inherit;
+}
+/* ===============================
+   FIX INPUT TEXT VISIBILITY
+   =============================== */
+
+/* Typed text inside inputs */
+.faq-modal input,
+.faq-modal textarea,
+.faq-modal select {
+  color: #1f2937 !important;        /* gray-800 (very visible) */
+  background-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Placeholder text */
+.faq-modal input::placeholder,
+.faq-modal textarea::placeholder {
+  color: #6b7280 !important;        /* gray-500 */
+}
+/* ✅ FIX search icon + placeholder overlap */
+.search-input {
+  padding-left: 3.25rem !important;  /* space after icon */
+}
+/* 🔥 FORCE REMOVE SEARCH ICON FROM INPUTS */
+input[type="search"],
+input[type="text"] {
+  background-image: none !important;
+}
+/* ================================
+   DEVELOPERS → QUICK LINKS FIX
+   ================================ */
+
+   .dark .developers-quicklinks {
+    background-color: #020617 !important; /* slate-950 */
+    border-color: #334155 !important;     /* slate-700 */
+  }
+  
+  .dark .developers-quicklinks h2 {
+    color: #f8fafc !important; /* white */
+  }
+  
+  /* Each quick link card */
+  .dark .developers-quicklink-card {
+    background-color: #1e293b !important; /* slate-800 */
+    border-color: #334155 !important;
+  }
+  
+  /* Text inside card */
+  .dark .developers-quicklink-card span {
+    color: #e5e7eb !important; /* gray-200 */
+  }
+  
+  /* Icons */
+  .dark .developers-quicklink-card svg {
+    color: #e5e7eb !important;
+  }
+  
+  /* Icon wrapper */
+  .dark .developers-quicklink-icon {
+    background-color: #020617 !important; /* slate-950 */
+  }
+  /* =====================================================
+   ABSOLUTE KILL SWITCH FOR WHITE HOVER (DARK MODE)
+   Settings page
+   ===================================================== */
+
+/* 1. Kill ALL background changes on hover */
+.dark .settings-card-inner,
+.dark .settings-card-inner:hover,
+.dark .settings-card-inner:focus,
+.dark .settings-card-inner:active {
+  background: inherit !important;
+  background-color: inherit !important;
+}
+
+/* 2. Kill pseudo-elements (MOST IMPORTANT) */
+.dark .settings-card-inner::before,
+.dark .settings-card-inner::after,
+.dark a::before,
+.dark a::after {
+  content: none !important;
+  background: none !important;
+}
+
+/* 3. Kill anchor hover overlays */
+.dark a:hover {
+  background: transparent !important;
+}
+
+/* 4. Prevent opacity / filter tricks */
+.dark .settings-card-inner:hover {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* 5. Debug safety (prevents light bleed) */
+.dark .settings-card-inner {
+  isolation: isolate;
+}
+
+/* Selected recipients card black background in dark mode */
+.dark .selected-recipients-card {
+  background-color: #000000 !important;
+}
+

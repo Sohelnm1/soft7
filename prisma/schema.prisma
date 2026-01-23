@@ -1,0 +1,534 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum MessageStatus {
+  pending
+  sent
+  delivered
+  read
+  failed
+}
+
+model Contact {
+  id             Int      @id @default(autoincrement())
+  phone          String?
+  name           String
+  source         String?
+  assignedTo     String?
+  email          String?
+  status         String?
+  wabaPhone      String?
+  interiorDesign String?
+  name1          String?
+  test           String?
+  allowDuplicate Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  userId         Int
+
+  messages         Message[]
+  contactReminders ContactReminder[]
+  tags             ContactTag[]
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@map("contacts")
+}
+
+model ContactTag {
+  id        Int      @id @default(autoincrement())
+  contactId Int
+  tagId     Int
+  createdAt DateTime @default(now())
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, tagId])
+  @@index([contactId])
+  @@index([tagId])
+  @@map("contact_tags")
+}
+
+model Conversation {
+  id            String    @id @default(uuid())
+  phone         String
+  name          String?
+  userId        Int
+  contactId     Int
+  lastInboundAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  User    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@unique([userId, phone])
+  @@unique([userId, contactId])
+  @@index([userId])
+  @@index([contactId])
+}
+
+model Message {
+  id             String @id @default(uuid())
+  conversationId String
+  contactId      Int
+  userId         Int
+
+  conversation      Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  contact           Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageType       String        @default("text")
+  whatsappMessageId String?       @unique
+  direction         String // incoming | outgoing
+  type              String        @default("text")
+  status            MessageStatus @default(pending)
+
+  content String?
+  text    String
+
+  mediaUrl  String?
+  mediaType String?
+  caption   String?
+
+  isTemplate         Boolean @default(false)
+  templateName       String?
+  templateLanguage   String?
+  templateParams     Json?
+  templateComponents Json?
+
+  errorCode    String?
+  errorMessage String?
+  error        String? @db.Text // ADD THIS
+  sentBy       String?
+  sentById     Int?
+  campaignId   String?
+  campaign     Campaign?     @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId])
+  @@index([contactId])
+  @@index([userId])
+  @@index([campaignId])
+  @@index([createdAt])
+  @@map("whatsapp_messages")
+}
+
+model User {
+  id                 Int               @id @default(autoincrement())
+  name               String
+  email              String            @unique
+  phone              String?
+  password           String
+  role               String            @default("ADMIN")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  image              String?
+  memberSince        DateTime          @default(now())
+  plan               String?
+  status             String            @default("online")
+  isPremium          Boolean           @default(false)
+  subscriptionPlan   String?
+  subscriptionId     String?
+  subscriptionStart  DateTime?
+  subscriptionEnd    DateTime?
+  razorpayCustomerId String?
+  aiAssistants       AiAssistant[]
+  campaigns          Campaign[]
+  chatbots           Chatbot[]
+  chatbotFAQs        ChatbotFAQ[]
+  columns            Column[]          @relation("UserColumns")
+  Conversation       Conversation[]
+  flows              Flow[]
+  leads              Lead[]
+  media              Media[]
+  messages           Message[]
+  optKeywords        OptKeyword[]      @relation("UserOptKeywords")
+  tags               Tag[]
+  webhookEndpoints   WebhookEndpoint[] @relation("UserWebhookEndpoints")
+  WhatsAppAccount    WhatsAppAccount[]
+  whatsappFlows      WhatsappFlow[]    @relation("UserWhatsappFlows")
+  contactReminders   ContactReminder[]
+  contacts           Contact[]
+  notifications      Notification[]
+  assignedReminders  Reminder[]        @relation("ReminderAssignee")
+  createdReminders   Reminder[]        @relation("ReminderCreator")
+  ownedReminders     Reminder[]        @relation("ReminderOwner")
+  subscriptions      Subscription[]
+  ownedTeams         TeamMember[]      @relation("UserOwnsTeams")
+  teamMembers        TeamMember[]      @relation("UserAsTeamMember")
+
+  @@index([email])
+}
+
+model TeamMember {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  ownerId   Int?
+  role      String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  owner     User?    @relation("UserOwnsTeams", fields: [ownerId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserAsTeamMember", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ownerId])
+  @@map("team_members")
+}
+
+model Lead {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  source    String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Campaign {
+  id               String    @id @default(cuid())
+  name             String
+  description      String?
+  type             String
+  status           String    @default("draft")
+  startDate        DateTime?
+  endDate          DateTime?
+  audienceData     Json?
+  messageTemplate  String?
+  selectedTemplate String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  leadsCount       Int       @default(0)
+  sentCount        Int       @default(0)
+  deliveredCount   Int       @default(0)
+  failedCount      Int       @default(0)
+  readCount        Int       @default(0)
+  messages         Message[]
+  userId           Int
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Media {
+  id        Int      @id @default(autoincrement())
+  name      String
+  fileName  String
+  type      String
+  size      String
+  url       String
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WhatsappFlow {
+  id         Int      @id @default(autoincrement())
+  businessId String
+  name       String
+  flowId     String
+  categories String?
+  status     String
+  validation String?
+  createdAt  DateTime @default(now())
+  userId     Int
+  user       User     @relation("UserWhatsappFlows", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ChatbotFAQ {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  name      String
+  faqBotId  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Tag {
+  id        Int          @id @default(autoincrement())
+  name      String
+  group     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  userId    Int
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts  ContactTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model WebhookEndpoint {
+  id            Int                   @id @default(autoincrement())
+  name          String
+  url           String
+  isActive      Boolean               @default(true)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  userId        Int
+  user          User                  @relation("UserWebhookEndpoints", fields: [userId], references: [id], onDelete: Cascade)
+  subscriptions WebhookSubscription[]
+
+  @@index([userId])
+}
+
+model WebhookSubscription {
+  id         Int             @id @default(autoincrement())
+  endpointId Int
+  eventName  String
+  createdAt  DateTime        @default(now())
+  endpoint   WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId])
+}
+
+model Column {
+  id        Int      @id @default(autoincrement())
+  label     String
+  type      String
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation("UserColumns", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model OptKeyword {
+  id        Int      @id @default(autoincrement())
+  keyword   String
+  type      String
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation("UserOptKeywords", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Flow {
+  id        Int      @id @default(autoincrement())
+  name      String
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  edges     Json?
+  nodes     Json?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AiAssistant {
+  id               Int      @id @default(autoincrement())
+  name             String
+  role             String
+  status           String   @default("active")
+  promptType       String
+  predefinedPrompt String?
+  customPrompt     String?
+  provider         String
+  model            String
+  apiKey           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  userId           Int?
+  user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Chatbot {
+  id          String        @id @default(cuid())
+  userId      Int?
+  name        String
+  description String?
+  status      String        @default("active")
+  published   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  sessions    ChatSession[]
+  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  edges       ChatbotEdge[]
+  nodes       ChatbotNode[]
+
+  @@index([userId])
+}
+
+model ChatbotNode {
+  id        String   @id @default(cuid())
+  chatbotId String
+  type      String
+  data      Json
+  position  Json
+  createdAt DateTime @default(now())
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId])
+}
+
+model ChatbotEdge {
+  id        String  @id @default(cuid())
+  chatbotId String
+  source    String
+  target    String
+  label     String?
+  data      Json?
+  chatbot   Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId])
+}
+
+model ChatSession {
+  id          String   @id @default(cuid())
+  chatbotId   String
+  userKey     String
+  memory      Json?
+  lastMessage String?
+  lastNodeId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  chatbot     Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId])
+  @@index([userKey])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Reminder {
+  id         String   @id @default(uuid())
+  note       String
+  date       String
+  time       String
+  triggered  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  creatorId  Int?
+  assignedTo Int?
+  userId     Int
+  assignee   User?    @relation("ReminderAssignee", fields: [assignedTo], references: [id])
+  creator    User?    @relation("ReminderCreator", fields: [creatorId], references: [id])
+  user       User     @relation("ReminderOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([date, time])
+  @@map("reminders")
+}
+
+model ContactReminder {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  contactId    Int
+  message      String
+  scheduleType String
+  onDate       String?
+  fromTime     String?
+  toTime       String?
+  allDay       Boolean  @default(false)
+  repeatEvery  Int?
+  repeatUnit   String?
+  selectedDays Json?
+  triggered    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  delivered    Boolean  @default(false)
+  contact      Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+  @@index([onDate])
+  @@index([triggered])
+  @@map("contact_reminders")
+}
+
+model Subscription {
+  id                String   @id @default(cuid())
+  userId            Int
+  planType          String
+  amount            Float
+  currency          String   @default("INR")
+  paymentMethod     String
+  razorpayOrderId   String?  @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+  status            String
+  startDate         DateTime
+  endDate           DateTime
+  autoRenew         Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([razorpayOrderId])
+  @@map("subscriptions")
+}
+
+model WhatsAppAccount {
+  id            Int                @id @default(autoincrement())
+  userId        Int
+  wabaId        String
+  phoneNumberId String
+  accessToken   String
+  verifyToken   String?
+  phoneNumber   String?
+  appId         String?
+  appSecret     String?
+  apiVersion    String?            @default("v22.0")
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  User          User               @relation(fields: [userId], references: [id])
+  templates     WhatsAppTemplate[]
+
+  @@unique([userId, phoneNumberId])
+}
+
+model WhatsAppTemplate {
+  id                Int             @id @default(autoincrement())
+  metaTemplateId    String?         // Meta's template ID for API operations
+  whatsappAccountId Int
+  name              String
+  language          String
+  category          String
+  status            String
+  isDefault         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  whatsappAccount   WhatsAppAccount @relation(fields: [whatsappAccountId], references: [id])
+
+  @@unique([whatsappAccountId, name])
+  components        Json?
+  qualityRating     String?
+  rejectionReason   String?
+}

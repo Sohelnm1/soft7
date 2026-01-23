@@ -1,0 +1,15 @@
+/* Avatar circle full gradient */
+.topbar-profile .profile-avatar {
+  background: linear-gradient(to top right, #10b981, #6ee7b7) !important;
+  border: none !important;
+}
+
+/* Keep the letter white */
+.topbar-profile .profile-avatar span {
+  color: #ffffff !important;
+}
+
+/* Make sure the avatar image fits */
+.topbar-profile .profile-avatar img {
+  object-fit: cover !important;
+}

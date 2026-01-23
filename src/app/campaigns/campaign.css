@@ -1,0 +1,721 @@
+/* Main Container */
+.campaign-page {
+  min-height: 100vh;
+  background-color: #f0fdf4;
+  color: #0f172a;
+  padding: 2rem;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(110, 231, 183, 0.05) 0px, transparent 50%);
+}
+
+/* Dark Mode Support */
+.dark .campaign-page {
+  background-color: #0d1117;
+  color: #ededed;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(110, 231, 183, 0.1) 0px, transparent 50%);
+}
+
+/* ========================================
+   CONTENT CARDS
+   ======================================== */
+.campaign-page .campaign-content-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .campaign-page .campaign-content-card {
+  background-color: #1a1f2e;
+  border: 1px solid #2d3441;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   HEADER & TEXT
+   ======================================== */
+.campaign-page h1,
+.campaign-page h2 {
+  color: #111827;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.dark .campaign-page h1,
+.dark .campaign-page h2 {
+  color: #ffffff;
+}
+
+/* Add subtle text gradient to main heading */
+.campaign-page .page-title {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .campaign-page .page-title {
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.campaign-page p {
+  color: #6b7280;
+}
+
+.dark .campaign-page p {
+  color: #9ca3af;
+}
+
+/* Header section styling */
+.campaign-page .header-section {
+  position: relative;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+}
+
+.campaign-page .header-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #e5e7eb 20%, #e5e7eb 80%, transparent 100%);
+}
+
+.dark .campaign-page .header-section::after {
+  background: linear-gradient(90deg, transparent 0%, #374151 20%, #374151 80%, transparent 100%);
+}
+
+/* ========================================
+   CONTROLS SECTION
+   ======================================== */
+
+/* Controls wrapper card effect */
+.campaign-page .controls-wrapper {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+.dark .campaign-page .controls-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Show Rows Container */
+.campaign-page .views-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.625rem 1rem !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+  font-weight: 600 !important;
+}
+
+.campaign-page .views-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: none !important;
+  transform: translateY(-1px) !important;
+}
+
+.dark .campaign-page .views-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: none !important;
+}
+
+.dark .campaign-page .views-btn:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+  box-shadow: none !important;
+}
+
+.campaign-page .views-btn label {
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+.dark .campaign-page .views-btn label {
+  color: #ffffff !important;
+}
+
+/* Select Dropdown */
+.campaign-page select {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+}
+
+.campaign-page select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dark .campaign-page select {
+  background-color: #1a1f2e !important;
+  color: #ffffff !important;
+  border: 1px solid #2d3441;
+}
+
+.campaign-page select option {
+  color: #111827 !important;
+  background-color: #ffffff;
+}
+
+.dark .campaign-page select option {
+  color: #ffffff !important;
+  background-color: #1a1f2e;
+}
+
+/* ========================================
+   FILTER & VIEWS BUTTONS
+   ======================================== */
+
+/* ✅ Filter Button - Green gradient */
+.campaign-page .filter-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.campaign-page .filter-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.dark .campaign-page .filter-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.5);
+}
+
+.campaign-page .filter-btn svg,
+.campaign-page .filter-btn span {
+  color: #ffffff !important;
+}
+
+/* Start Date badge inside filter */
+.campaign-page .filter-btn > div > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 120px !important;
+  padding: 0.5rem 0.5rem !important;
+  border-radius: 0.5rem !important;
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+
+/* ✅ Views Dropdown Button - Green gradient */
+.campaign-page .views-dropdown-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-weight: 600;
+}
+
+.dark .campaign-page .views-dropdown-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+
+/* ========================================
+   DROPDOWN MENU
+   ======================================== */
+.campaign-page .views-dropdown > div {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border-radius: 0.75rem;
+}
+
+.dark .campaign-page .views-dropdown > div {
+  background-color: #252b3b;
+  border: 1px solid #2d3441;
+}
+
+.campaign-page .views-dropdown label {
+  color: #111827;
+  background-color: transparent;
+}
+
+.campaign-page .views-dropdown label:hover {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.dark .campaign-page .views-dropdown label {
+  color: #ffffff;
+}
+
+.dark .campaign-page .views-dropdown label:hover {
+  background: #2d3441;
+}
+
+/* ========================================
+   TABLE STYLING
+   ======================================== */
+.campaign-page .overflow-x-auto {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .campaign-page .overflow-x-auto {
+  background-color: #252b3b;
+  border: 1px solid #2d3441;
+}
+
+/* Table Header */
+.campaign-page table thead {
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .campaign-page table thead {
+  background: #1f2430;
+  border-bottom: 1px solid #2d3441;
+}
+
+.campaign-page table thead th {
+  padding: 1rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.dark .campaign-page table thead th {
+  color: #9ca3af;
+}
+
+/* Table Body */
+.campaign-page table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.campaign-page table tbody tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+.campaign-page table tbody tr:nth-child(odd) {
+  background-color: #f9fafb;
+}
+
+.campaign-page table tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+.dark .campaign-page table tbody tr {
+  border-bottom: 1px solid #2d3441;
+}
+
+.dark .campaign-page table tbody tr:nth-child(even) {
+  background-color: #252b3b;
+}
+
+.dark .campaign-page table tbody tr:nth-child(odd) {
+  background-color: #1f2430;
+}
+
+.dark .campaign-page table tbody tr:hover {
+  background-color: #2d3441;
+}
+
+.campaign-page table tbody td {
+  padding: 1rem 1.5rem;
+  color: #111827;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.dark .campaign-page table tbody td {
+  color: #ffffff;
+}
+
+/* ========================================
+   STATUS BADGES
+   ======================================== */
+.campaign-page .inline-flex.items-center.rounded-full {
+  padding: 0.375rem 0.875rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.025em !important;
+}
+
+/* Active Status */
+.campaign-page .bg-indigo-600\/20 {
+  background-color: rgba(79, 70, 229, 0.15) !important;
+  color: #4f46e5 !important;
+  border: 1px solid rgba(79, 70, 229, 0.3) !important;
+}
+
+/* Scheduled Status */
+.campaign-page .bg-blue-500\/20 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: #2563eb !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Paused Status */
+.campaign-page .bg-yellow-500\/20 {
+  background-color: rgba(234, 179, 8, 0.15) !important;
+  color: #ca8a04 !important;
+  border: 1px solid rgba(234, 179, 8, 0.3) !important;
+}
+
+/* Completed Status */
+.campaign-page .bg-green-500\/20 {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+  color: #16a34a !important;
+  border: 1px solid rgba(34, 197, 94, 0.3) !important;
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+.campaign-page table button {
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.2s ease !important;
+  background-color: transparent !important;
+}
+
+.campaign-page table button:hover {
+  transform: scale(1.1);
+  background-color: #f0f9ff !important;
+}
+
+.dark .campaign-page table button:hover {
+  background-color: #1e293b !important;
+}
+
+/* Icon Colors */
+.campaign-page table button svg {
+  transition: all 0.2s ease !important;
+}
+
+.campaign-page table button:first-of-type:hover svg {
+  color: #3b82f6 !important;
+}
+
+.campaign-page table button:nth-of-type(2):hover svg {
+  color: #8b5cf6 !important;
+}
+
+.campaign-page table button:last-of-type:hover svg {
+  color: #ef4444 !important;
+}
+
+/* ========================================
+   PAGINATION
+   ======================================== */
+.campaign-page .pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.campaign-page .page-info {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dark .campaign-page .page-info {
+  color: #9ca3af;
+}
+
+.campaign-page .page-info strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.dark .campaign-page .page-info strong {
+  color: #ffffff;
+}
+
+/* ✅ Pagination Buttons - Green gradient */
+.campaign-page .pagination-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s ease;
+}
+
+.campaign-page .pagination-btn svg {
+  color: #ffffff !important;
+}
+
+.campaign-page .pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.campaign-page .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  color: #065f46 !important;
+}
+
+.campaign-page .pagination-btn:disabled svg {
+  color: #065f46 !important;
+}
+
+.dark .campaign-page .pagination-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.5);
+}
+
+.dark .campaign-page .pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+}
+
+.dark .campaign-page .pagination-btn:disabled {
+  background: linear-gradient(135deg, #064e3b 0%, #0d3a2a 100%) !important;
+  opacity: 0.3;
+  color: #86efac !important;
+}
+
+.dark .campaign-page .pagination-btn:disabled svg {
+  color: #86efac !important;
+}
+
+/* ========================================
+   MODAL STYLING - FIXED DARK MODE
+   ======================================== */
+.campaign-page .fixed.inset-0 > div,
+.campaign-page .modal-content {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dark .campaign-page .fixed.inset-0 > div,
+.dark .campaign-page .modal-content {
+  background-color: #252b3b;
+  border: 1px solid #2d3441;
+}
+
+.campaign-page .fixed.inset-0 h2 {
+  color: #10b981;
+}
+
+.dark .campaign-page .fixed.inset-0 h2 {
+  color: #6ee7b7;
+}
+
+.campaign-page .fixed.inset-0 .border-b {
+  border-color: #e5e7eb;
+}
+
+.dark .campaign-page .fixed.inset-0 .border-b {
+  border-color: #2d3441;
+}
+
+.campaign-page .fixed.inset-0 span {
+  color: #111827;
+}
+
+.dark .campaign-page .fixed.inset-0 span {
+  color: #ffffff;
+}
+
+/* ========================================
+   MODAL FORM INPUTS - DARK MODE FIX
+   ======================================== */
+
+/* All form inputs in modal */
+.dark .campaign-page .modal-content input,
+.dark .campaign-page .modal-content select,
+.dark .campaign-page .modal-content textarea,
+.dark .campaign-page .dark-mode-form-wrapper input,
+.dark .campaign-page .dark-mode-form-wrapper select,
+.dark .campaign-page .dark-mode-form-wrapper textarea {
+  background-color: #1F2937 !important;
+  color: #F9FAFB !important;
+  border-color: #374151 !important;
+}
+
+/* Placeholder text */
+.dark .campaign-page .modal-content input::placeholder,
+.dark .campaign-page .modal-content textarea::placeholder,
+.dark .campaign-page .dark-mode-form-wrapper input::placeholder,
+.dark .campaign-page .dark-mode-form-wrapper textarea::placeholder {
+  color: #9CA3AF !important;
+}
+
+/* Labels */
+.dark .campaign-page .modal-content label,
+.dark .campaign-page .modal-content .form-label,
+.dark .campaign-page .dark-mode-form-wrapper label {
+  color: #F9FAFB !important;
+}
+
+/* Headings in modal */
+.dark .campaign-page .modal-content h2,
+.dark .campaign-page .modal-content h3,
+.dark .campaign-page .dark-mode-form-wrapper h2,
+.dark .campaign-page .dark-mode-form-wrapper h3 {
+  color: #F9FAFB !important;
+}
+
+/* Select dropdown options */
+.dark .campaign-page .modal-content select option,
+.dark .campaign-page .dark-mode-form-wrapper select option {
+  background-color: #1F2937 !important;
+  color: #F9FAFB !important;
+}
+
+/* Fix for dropdown menu items */
+.dark .campaign-page .fixed.inset-0 select option,
+.dark .modal-content select option,
+.dark .dark-mode-form-wrapper select option {
+  background-color: #1F2937 !important;
+  color: #F9FAFB !important;
+}
+
+/* Ensure select dropdown itself has proper styling */
+.dark .campaign-page .fixed.inset-0 select,
+.dark .modal-content select,
+.dark .dark-mode-form-wrapper select {
+  background-color: #1F2937 !important;
+  color: #F9FAFB !important;
+  border-color: #374151 !important;
+}
+
+/* Focus states */
+.dark .campaign-page .modal-content input:focus,
+.dark .campaign-page .modal-content select:focus,
+.dark .campaign-page .modal-content textarea:focus,
+.dark .campaign-page .dark-mode-form-wrapper input:focus,
+.dark .campaign-page .dark-mode-form-wrapper select:focus,
+.dark .campaign-page .dark-mode-form-wrapper textarea:focus {
+  border-color: #60A5FA !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3) !important;
+}
+
+/* Additional fix for select dropdown appearance */
+.dark select,
+.dark select option {
+  background-color: #1F2937 !important;
+  color: #F9FAFB !important;
+}
+
+/* Override any default browser styles for select in dark mode */
+.dark .campaign-page select,
+.dark .campaign-page select option,
+.dark .fixed.inset-0 select,
+.dark .fixed.inset-0 select option {
+  background-color: #1F2937 !important;
+  color: #F9FAFB !important;
+  border-color: #374151 !important;
+}
+
+/* Light mode form inputs */
+.campaign-page .modal-content input,
+.campaign-page .modal-content select,
+.campaign-page .modal-content textarea,
+.campaign-page .dark-mode-form-wrapper input,
+.campaign-page .dark-mode-form-wrapper select,
+.campaign-page .dark-mode-form-wrapper textarea {
+  background-color: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+}
+
+.campaign-page .modal-content label,
+.campaign-page .dark-mode-form-wrapper label {
+  color: #374151;
+}
+
+/* ========================================
+   LOADING & EMPTY STATES
+   ======================================== */
+.campaign-page table tbody td[colspan] {
+  text-align: center;
+  padding: 4rem 1.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.dark .campaign-page table tbody td[colspan] {
+  color: #6b7280;
+}
+
+/* Empty State Illustration */
+.campaign-page .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.campaign-page .empty-state-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.dark .campaign-page .empty-state-icon {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+}
+
+.campaign-page .empty-state-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dark .campaign-page .empty-state-text {
+  color: #d1d5db;
+}
+
+.campaign-page .empty-state-subtext {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.dark .campaign-page .empty-state-subtext {
+  color: #9ca3af;
+}

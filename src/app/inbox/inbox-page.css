@@ -1,0 +1,379 @@
+/* Professional Inbox UI skin.
+   We keep this file small and predictable: layout/spacing stays in Tailwind,
+   this file only provides consistent theming for the "chat" primitives. */
+
+.inbox-page * {
+  box-sizing: border-box;
+}
+
+/* ---------- Icon sidebar ---------- */
+.inbox-page .icon-sidebar {
+  background: #e6fff4;
+}
+
+.dark .inbox-page .icon-sidebar {
+  background: rgba(15, 23, 42, 1);
+}
+
+.inbox-page .icon-button {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  color: rgba(15, 23, 42, 0.86);
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.dark .inbox-page .icon-button {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(248, 250, 252, 0.92);
+}
+
+.inbox-page .icon-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.inbox-page .icon-button.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: rgba(15, 23, 42, 0.9);
+}
+
+.dark .inbox-page .icon-button.active {
+  background: rgba(16, 185, 129, 0.22);
+  color: rgba(248, 250, 252, 0.95);
+}
+
+.inbox-page .icon-tooltip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(2, 6, 23, 0.95);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+}
+
+.inbox-page .icon-container:hover .icon-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ---------- Contacts panel ---------- */
+.inbox-page .contacts-sidebar {
+  background: #ffffff;
+  border-right: 1px solid rgba(226, 232, 240, 1);
+}
+
+.dark .inbox-page .contacts-sidebar {
+  background: rgb(2, 6, 23);
+  border-right-color: rgba(30, 41, 59, 1);
+}
+
+.inbox-page .contacts-header {
+  background: #ffffff;
+  color: rgb(15, 23, 42);
+  border-bottom: 1px solid rgba(226, 232, 240, 1);
+}
+
+.dark .inbox-page .contacts-header {
+  background: rgb(2, 6, 23);
+  color: rgba(226, 232, 240, 0.95);
+  border-bottom-color: rgba(30, 41, 59, 1);
+}
+
+.inbox-page .search-input {
+  background: rgba(248, 250, 252, 1);
+  border: 1px solid rgba(226, 232, 240, 1);
+  color: rgb(15, 23, 42);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.inbox-page .search-input:focus {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  background: #ffffff;
+}
+
+.dark .inbox-page .search-input {
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(30, 41, 59, 1);
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.dark .inbox-page .search-input:focus {
+  background: rgba(15, 23, 42, 0.65);
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+
+.inbox-page .contact-item {
+  border-bottom: 1px solid rgba(226, 232, 240, 1);
+  transition: background-color 0.12s ease;
+}
+
+.dark .inbox-page .contact-item {
+  border-bottom-color: rgba(30, 41, 59, 1);
+}
+
+.inbox-page .contact-item:hover {
+  background: rgba(2, 6, 23, 0.03);
+}
+
+.dark .inbox-page .contact-item:hover {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.inbox-page .contact-item.selected {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.dark .inbox-page .contact-item.selected {
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.inbox-page .contact-avatar {
+  background: rgba(16, 185, 129, 0.16);
+  color: rgba(16, 185, 129, 1);
+  font-weight: 700;
+}
+
+.dark .inbox-page .contact-avatar {
+  background: rgba(16, 185, 129, 0.18);
+  color: rgba(110, 231, 183, 1);
+}
+
+.inbox-page .unread-badge {
+  background: rgba(16, 185, 129, 1);
+  color: #ffffff;
+}
+
+/* ---------- Chat panel ---------- */
+.inbox-page .chat-area {
+  background: rgba(248, 250, 252, 1);
+}
+
+.dark .inbox-page .chat-area {
+  background: rgb(3, 7, 18);
+}
+
+.inbox-page .chat-header {
+  background: #ffffff;
+  border-bottom: 1px solid rgba(226, 232, 240, 1);
+  color: rgb(15, 23, 42);
+}
+
+.dark .inbox-page .chat-header {
+  background: rgb(2, 6, 23);
+  border-bottom-color: rgba(30, 41, 59, 1);
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.inbox-page .chat-scroll {
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(1200px 500px at 30% 0%, rgba(16, 185, 129, 0.05), transparent 60%),
+    radial-gradient(900px 400px at 90% 30%, rgba(56, 189, 248, 0.04), transparent 65%);
+  background-color: rgba(248, 250, 252, 1);
+  background-position: 0 0, 0 0, 0 0;
+}
+
+.dark .inbox-page .chat-scroll {
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(1200px 500px at 30% 0%, rgba(16, 185, 129, 0.08), transparent 60%),
+    radial-gradient(900px 400px at 90% 30%, rgba(56, 189, 248, 0.06), transparent 65%);
+  background-color: rgb(3, 7, 18);
+  background-position: 0 0, 0 0, 0 0;
+}
+
+.inbox-page .message-bubble {
+  max-width: min(640px, 78%);
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.35rem;
+  box-shadow: 0 1px 1px rgba(2, 6, 23, 0.08);
+  word-wrap: break-word;
+}
+
+.inbox-page .message-sent {
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  color: rgb(15, 23, 42);
+  border-bottom-right-radius: 6px;
+}
+
+.dark .inbox-page .message-sent {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.22);
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.inbox-page .message-received {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 1);
+  color: rgb(15, 23, 42);
+  border-bottom-left-radius: 6px;
+}
+
+.dark .inbox-page .message-received {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(30, 41, 59, 1);
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.inbox-page .message-meta {
+  color: rgba(100, 116, 139, 1);
+}
+
+.dark .inbox-page .message-meta {
+  color: rgba(148, 163, 184, 0.9);
+}
+
+/* ---------- Input ---------- */
+.inbox-page .chat-input-wrap {
+  background: #ffffff;
+  border-top: 1px solid rgba(241, 245, 249, 1);
+}
+
+.dark .inbox-page .chat-input-wrap {
+  background: rgb(2, 6, 23);
+  border-top-color: rgba(15, 23, 42, 1);
+}
+
+.inbox-page .chat-input {
+  background: #ffffff;
+  border-radius: 999px;
+  border: 1px solid rgba(226, 232, 240, 1);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
+}
+
+.dark .inbox-page .chat-input {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(30, 41, 59, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Icon buttons inside chat input (attachment + template) */
+.inbox-page .chat-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 1);
+}
+
+.inbox-page .chat-icon-btn:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.dark .inbox-page .chat-icon-btn {
+  background: rgba(15, 23, 42, 1);
+  border-color: rgba(30, 41, 59, 1);
+}
+
+.dark .inbox-page .chat-icon-btn:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+}
+
+/* Mic button reuses same base but turns solid when recording */
+.inbox-page .chat-mic-btn {
+  background: #ffffff;
+  border-color: rgba(226, 232, 240, 1);
+  color: rgba(71, 85, 105, 1);
+}
+
+.inbox-page .chat-mic-btn:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  color: rgba(4, 120, 87, 1);
+}
+
+.dark .inbox-page .chat-mic-btn {
+  background: rgba(15, 23, 42, 1);
+  border-color: rgba(30, 41, 59, 1);
+  color: rgba(148, 163, 184, 1);
+}
+
+.dark .inbox-page .chat-mic-btn:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  color: rgba(45, 212, 191, 1);
+}
+
+.inbox-page .chat-mic-btn-recording {
+  background: rgba(239, 68, 68, 1);
+  border-color: rgba(239, 68, 68, 1);
+  color: #ffffff;
+}
+
+.inbox-page .message-input {
+  color: rgb(15, 23, 42);
+}
+
+.dark .inbox-page .message-input {
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.inbox-page .message-input::placeholder {
+  color: rgba(100, 116, 139, 1);
+}
+
+.dark .inbox-page .message-input::placeholder {
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.inbox-page .btn-primary {
+  background: rgba(16, 185, 129, 1);
+}
+
+.inbox-page .btn-primary:hover {
+  background: rgba(5, 150, 105, 1);
+}
+
+/* ---------- Menus ---------- */
+.inbox-page .dropdown-menu,
+.inbox-page .attach-menu {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 1);
+  color: rgb(15, 23, 42);
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.12);
+  border-radius: 14px;
+}
+
+.dark .inbox-page .dropdown-menu,
+.dark .inbox-page .attach-menu {
+  background: rgba(2, 6, 23, 0.98);
+  border-color: rgba(30, 41, 59, 1);
+  color: rgba(226, 232, 240, 0.95);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Scrollbar ---------- */
+.inbox-page ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.inbox-page ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.inbox-page ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+  background-clip: content-box;
+}

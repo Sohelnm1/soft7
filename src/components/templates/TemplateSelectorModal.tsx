@@ -1,0 +1,388 @@
+"use client";
+import { useState, useEffect } from "react";
+import { X, Search, FileText, Send } from "lucide-react";
+import FormattedText from "./FormattedText";
+
+interface Template {
+    id: number;
+    name: string;
+    category: string;
+    language: string;
+    status: string;
+    components: any[];
+}
+
+interface TemplateSelectorModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    contactPhone: string;
+    onSend: (templateId: number, variables: Record<string, string>) => Promise<void>;
+}
+
+export function TemplateSelectorModal({
+    isOpen,
+    onClose,
+    contactPhone,
+    onSend,
+}: TemplateSelectorModalProps) {
+    const [templates, setTemplates] = useState<Template[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+    const [variables, setVariables] = useState<Record<string, string>>({});
+    const [sending, setSending] = useState(false);
+
+    // Fetch templates when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchTemplates();
+        }
+    }, [isOpen]);
+
+    const fetchTemplates = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/templates/list?status=APPROVED");
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setTemplates(data);
+            } else {
+                console.error("Failed to fetch templates:", data);
+                setTemplates([]);
+            }
+        } catch (error) {
+            console.error("Error fetching templates:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const extractVariables = (template: Template) => {
+        const vars: string[] = [];
+        template.components?.forEach((component) => {
+            if (component.type === "BODY" && component.text) {
+                const matches = component.text.match(/\{\{(\d+)\}\}/g);
+                if (matches) {
+                    matches.forEach((match: string) => {
+                        const num = match.replace(/\{\{|\}\}/g, "");
+                        if (!vars.includes(num)) vars.push(num);
+                    });
+                }
+            }
+            if (component.type === "HEADER" && component.format === "TEXT" && component.text) {
+                const matches = component.text.match(/\{\{(\d+)\}\}/g);
+                if (matches) {
+                    matches.forEach((match: string) => {
+                        const num = match.replace(/\{\{|\}\}/g, "");
+                        if (!vars.includes(num)) vars.push(num);
+                    });
+                }
+            }
+        });
+        return vars.sort();
+    };
+
+    const handleTemplateSelect = (template: Template) => {
+        setSelectedTemplate(template);
+        const vars = extractVariables(template);
+        const initialVars: Record<string, string> = {};
+        vars.forEach((v) => (initialVars[v] = ""));
+        setVariables(initialVars);
+    };
+
+    const handleSend = async () => {
+        if (!selectedTemplate) return;
+
+        setSending(true);
+        try {
+            await onSend(selectedTemplate.id, variables);
+            onClose();
+            setSelectedTemplate(null);
+            setVariables({});
+        } catch (error) {
+            console.error("Error sending template:", error);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const filteredTemplates = templates.filter((t) =>
+        t.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700">
+                {/* Header */}
+                <div className="px-5 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300">
+                            <FileText size={20} />
+                        </span>
+                        <div>
+                            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                                Send WhatsApp template
+                            </h2>
+                            <p className="text-xs text-slate-600 dark:text-slate-300">
+                                Choose an approved template and review the message before sending.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="flex flex-1 overflow-hidden">
+                    {/* Template List */}
+                    <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 flex flex-col bg-slate-50 dark:bg-slate-800">
+                        {/* Search */}
+                        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Search templates..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-9 pr-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-600"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Template List */}
+                        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+                            {loading ? (
+                                <div className="text-center py-8 text-slate-500 dark:text-slate-300 text-sm">Loading templates...</div>
+                            ) : filteredTemplates.length === 0 ? (
+                                <div className="text-center py-8 text-slate-500 dark:text-slate-300 text-sm">No approved templates found</div>
+                            ) : (
+                                filteredTemplates.map((template) => (
+                                    <div
+                                        key={template.id}
+                                        onClick={() => handleTemplateSelect(template)}
+                                        className={`px-3 py-2.5 rounded-lg cursor-pointer border text-sm transition-colors ${selectedTemplate?.id === template.id
+                                            ? "bg-teal-50 dark:bg-teal-900/30 border-teal-400/70 dark:border-teal-500 text-teal-900 dark:text-teal-100"
+                                            : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-900 dark:text-white"
+                                            }`}
+                                    >
+                                        <div className="font-medium">{template.name}</div>
+                                        <div className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">
+                                            {template.category} • {template.language}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Preview & Variables */}
+                    <div className="w-1/2 flex flex-col bg-white dark:bg-slate-800 min-h-0">
+                        {/* Preview */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                                Preview
+                            </h3>
+                            {selectedTemplate ? (
+                                <>
+                                    <p className="text-xs text-slate-600 dark:text-slate-300 transition-opacity duration-200">
+                                        Sent to <span className="font-medium text-slate-700 dark:text-slate-100">{contactPhone}</span> using{" "}
+                                        <span className="font-medium text-slate-700 dark:text-slate-100">{selectedTemplate.name}</span>
+                                    </p>
+
+                                    <div className="max-w-md mx-auto">
+                                        <div className="rounded-2xl border border-teal-100 dark:border-teal-700 bg-white dark:bg-slate-700 shadow-sm overflow-hidden animate-in fade-in duration-200">
+                                            <div className="px-4 py-3 border-b border-teal-50 dark:border-teal-900/40 bg-teal-50/80 dark:bg-teal-900/20 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                                        {selectedTemplate.name}
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                                                        {selectedTemplate.category} • {selectedTemplate.language}
+                                                    </p>
+                                                </div>
+                                                <span className="text-[11px] text-teal-700 dark:text-teal-300">
+                                                    Template
+                                                </span>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                {selectedTemplate.components?.map((component, idx) => {
+                                                    // HEADER with IMAGE, VIDEO, or DOCUMENT
+                                                    if (component.type === "HEADER" && component.format !== "TEXT") {
+                                                        const mediaUrl = component.example?.header_handle?.[0];
+                                                        if (component.format === "IMAGE" && mediaUrl) {
+                                                            return (
+                                                                <div key={idx} className="w-full">
+                                                                    <img
+                                                                        src={mediaUrl}
+                                                                        alt="Template header"
+                                                                        className="w-full h-auto object-cover max-h-64"
+                                                                        onError={(e) => {
+                                                                            const target = e.target as HTMLImageElement;
+                                                                            target.style.display = 'none';
+                                                                            const fallback = target.nextElementSibling as HTMLElement;
+                                                                            if (fallback) fallback.style.display = 'flex';
+                                                                        }}
+                                                                    />
+                                                                    <div className="hidden w-full h-32 bg-slate-100 dark:bg-slate-800 rounded-b-lg items-center justify-center text-slate-500 dark:text-slate-400 text-xs">
+                                                                        <div className="text-center">
+                                                                            <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                                            </svg>
+                                                                            Image not available
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        if (component.format === "VIDEO" && mediaUrl) {
+                                                            return (
+                                                                <div key={idx} className="w-full bg-slate-100 dark:bg-slate-800 rounded-b-lg h-32 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs">
+                                                                    <div className="text-center">
+                                                                        <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                                                        </svg>
+                                                                        Video
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        if (component.format === "DOCUMENT" && mediaUrl) {
+                                                            return (
+                                                                <div key={idx} className="w-full bg-slate-100 dark:bg-slate-800 rounded-b-lg h-32 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs">
+                                                                    <div className="text-center">
+                                                                        <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                        Document
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    }
+                                                    // HEADER with TEXT
+                                                    if (component.type === "HEADER" && component.format === "TEXT") {
+                                                        return (
+                                                            <div
+                                                                key={idx}
+                                                                className="px-4 pt-3 font-semibold text-slate-900 dark:text-white"
+                                                            >
+                                                                {component.text}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (component.type === "BODY") {
+                                                        return (
+                                                            <div
+                                                                key={idx}
+                                                                className="px-4 text-sm text-slate-800 dark:text-slate-100 whitespace-pre-line"
+                                                            >
+                                                                <FormattedText text={component.text} />
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (component.type === "FOOTER") {
+                                                        return (
+                                                            <div
+                                                                key={idx}
+                                                                className="px-4 pb-3 pt-1 text-[11px] text-slate-500 dark:text-slate-300"
+                                                            >
+                                                                {component.text}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (component.type === "BUTTONS") {
+                                                        return (
+                                                            <div
+                                                                key={idx}
+                                                                className="px-4 pb-3 mt-2 border-t border-gray-100 dark:border-gray-700 pt-3 space-y-2"
+                                                            >
+                                                                {component.buttons?.map((btn: any, bidx: number) => (
+                                                                    <button
+                                                                        key={bidx}
+                                                                        type="button"
+                                                                        className="w-full text-sm font-medium text-emerald-700 dark:text-emerald-300 py-2 border border-emerald-100 dark:border-emerald-800 rounded-lg bg-emerald-50/70 dark:bg-emerald-900/30"
+                                                                    >
+                                                                        {btn.text}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Variables */}
+                                    {Object.keys(variables).length > 0 && (
+                                        <div className="mt-6 px-4 pb-4">
+                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-2">
+                                                Fill variables
+                                            </h3>
+                                            <div className="space-y-3">
+                                                {Object.keys(variables).map((varNum) => (
+                                                    <div key={varNum}>
+                                                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                            Variable {varNum}
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={variables[varNum]}
+                                                            onChange={(e) =>
+                                                                setVariables({ ...variables, [varNum]: e.target.value })
+                                                            }
+                                                            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100"
+                                                            placeholder={`Enter value for {{${varNum}}}`}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="max-w-md mx-auto">
+                                    <div className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 shadow-sm overflow-hidden min-h-[280px] flex items-center justify-center">
+                                        <p className="text-sm text-slate-500 dark:text-slate-200">
+                                            Select a template to preview
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Send Button - Always visible, fixed at bottom */}
+                        <div className="p-5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
+                            <button
+                                onClick={handleSend}
+                                disabled={!selectedTemplate || sending || Object.values(variables).some((v) => !v.trim())}
+                                className="w-full bg-teal-600 hover:bg-teal-700 disabled:cursor-not-allowed text-white py-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors duration-150 disabled:opacity-50"
+                            >
+                                {sending ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                        <span>Sending...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={20} />
+                                        <span>Send Template</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

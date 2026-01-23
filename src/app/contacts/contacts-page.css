@@ -1,0 +1,619 @@
+/* Contacts Page - Professional Green Theme */
+
+/* Main Container */
+.contacts-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%) !important;
+  color: #0f172a;
+  padding: 2rem;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(110, 231, 183, 0.05) 0px, transparent 50%);
+}
+
+/* Dark Mode Support */
+.dark .contacts-page {
+  background: linear-gradient(135deg, #0d1117 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%) !important;
+  color: #ededed;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(110, 231, 183, 0.1) 0px, transparent 50%);
+}
+
+/* ========================================
+   CONTENT CARDS
+   ======================================== */
+.contacts-page .content-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .contacts-page .content-card {
+  background-color: #1a1f2e;
+  border: 1px solid #2d3441;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   HEADER & TEXT
+   ======================================== */
+.contacts-page h1,
+.contacts-page h2 {
+  color: #111827;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.dark .contacts-page h1,
+.dark .contacts-page h2 {
+  color: #ffffff;
+}
+
+/* Add subtle text gradient to main heading */
+.contacts-page .page-title {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .contacts-page .page-title {
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.contacts-page p {
+  color: #6b7280;
+}
+
+.dark .contacts-page p {
+  color: #9ca3af;
+}
+
+/* Header section styling */
+.contacts-page .header-section {
+  position: relative;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+}
+
+.contacts-page .header-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #e5e7eb 20%, #e5e7eb 80%, transparent 100%);
+}
+
+.dark .contacts-page .header-section::after {
+  background: linear-gradient(90deg, transparent 0%, #374151 20%, #374151 80%, transparent 100%);
+}
+
+/* ========================================
+   CONTROLS SECTION
+   ======================================== */
+
+/* Action Buttons */
+.contacts-page .action-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+}
+
+.contacts-page .action-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
+}
+
+.contacts-page .action-btn:active {
+  transform: translateY(0px) !important;
+}
+
+/* Secondary buttons */
+.contacts-page .btn-secondary {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  color: #065f46 !important;
+  border: 2px solid #10b981 !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1) !important;
+  font-weight: 600 !important;
+}
+
+.contacts-page .btn-secondary:hover {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* ========================================
+   TABLE STYLING
+   ======================================== */
+
+.contacts-page .table-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  overflow: hidden !important;
+}
+
+.dark .contacts-page .table-container {
+  background: linear-gradient(135deg, #1a1f2e 0%, #334155 100%) !important;
+  border: 1px solid #2d3441 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.contacts-page table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+.contacts-page th {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  padding: 1rem !important;
+  text-align: left !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid #34d399 !important;
+}
+
+.contacts-page td {
+  padding: 1rem !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  color: #374151 !important;
+}
+
+.dark .contacts-page td {
+  border-bottom: 1px solid #2d3441 !important;
+  color: #e5e7eb !important;
+}
+
+.contacts-page tbody tr:hover {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+}
+
+.dark .contacts-page tbody tr:hover {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 100%) !important;
+}
+
+/* ========================================
+   FORM ELEMENTS
+   ======================================== */
+   .contacts-page input,
+   .contacts-page select,
+   .contacts-page textarea {
+     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+     border: 2px solid #10b981 !important;
+     border-radius: 0.5rem !important;
+   
+     /* ✅ DO NOT use padding shorthand */
+     padding-top: 1rem !important;
+     padding-right: 1rem !important;
+     padding-bottom: 1rem !important;
+     padding-left: 1.7rem !important;
+   
+     color: #374151 !important;
+     transition: all 0.3s ease !important;
+   }
+   
+
+
+.contacts-page input:focus,
+.contacts-page select:focus,
+.contacts-page textarea:focus {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+  outline: none !important;
+}
+
+.dark .contacts-page input,
+.dark .contacts-page select,
+.dark .contacts-page textarea {
+  background: linear-gradient(135deg, #1a1f2e 0%, #334155 100%) !important;
+  border: 2px solid #10b981 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .contacts-page input:focus,
+.dark .contacts-page select:focus,
+.dark .contacts-page textarea:focus {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 100%) !important;
+}
+
+/* ========================================
+   MODALS & OVERLAYS
+   ======================================== */
+
+.contacts-page .modal-overlay {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.contacts-page .modal-content {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .contacts-page .modal-content {
+  background: linear-gradient(135deg, #1a1f2e 0%, #334155 100%) !important;
+  border: 1px solid #2d3441 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ========================================
+   SOURCE BADGES - GREEN THEME
+   ======================================== */
+
+.source-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border-width: 1px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Explicit color definitions for each source - Green theme */
+.source-facebook {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border-color: #34d399 !important;
+}
+
+.source-instagram {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  color: #ffffff !important;
+  border-color: #10b981 !important;
+}
+
+.source-whatsapp {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  border-color: #6ee7b7 !important;
+}
+
+.source-website {
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%) !important;
+  color: #065f46 !important;
+  border-color: #10b981 !important;
+}
+
+/* Default for unknown sources */
+.source-default {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  color: #065f46 !important;
+  border-color: #10b981 !important;
+}
+
+/* Dark Mode Variants - Enhanced green */
+.dark .source-facebook {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  color: #e6ffef !important;
+  border-color: #10b981 !important;
+}
+
+.dark .source-instagram {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+  color: #e6ffef !important;
+  border-color: #059669 !important;
+}
+
+.dark .source-whatsapp {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #125129 !important;
+  border-color: #34d399 !important;
+}
+
+.dark .source-website {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+  color: #e6ffef !important;
+  border-color: #6ee7b7 !important;
+}
+
+.dark .source-default {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 100%) !important;
+  color: #e6ffef !important;
+  border-color: #10b981 !important;
+}
+
+/* Optional: Hover effect */
+.source-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+/* 🛡️ PROTECT FROM PARENT INHERITANCE */
+.source-badge * {
+  background-color: inherit !important;
+  color: inherit !important;
+}
+
+/* 📱 MOBILE CARD VIEW BADGES */
+.contact-card .source-badge {
+  margin-top: 0.5rem;
+}
+
+/* ✨ SMOOTH TRANSITIONS */
+.source-badge {
+  transition: background-color 0.2s ease,
+              color 0.2s ease,
+              border-color 0.2s ease,
+              transform 0.2s ease;
+}
+
+/* ========================================
+   ANIMATIONS & EFFECTS
+   ======================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contacts-page .fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Stats cards hover effect */
+.contacts-page .stats-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contacts-page .stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.1);
+}
+
+.dark .contacts-page .stats-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.3);
+}
+
+/* ========================================
+   PAGINATION
+   ======================================== */
+
+.contacts-page .pagination {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.9) 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1) !important;
+}
+
+.dark .contacts-page .pagination {
+  background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
+}
+
+.contacts-page .pagination-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2) !important;
+  font-weight: 600 !important;
+}
+
+.contacts-page .pagination-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.contacts-page .pagination-btn:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ========================================
+   SCROLLBARS
+   ======================================== */
+
+.contacts-page ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.contacts-page ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.contacts-page ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.contacts-page ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.dark .contacts-page ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark .contacts-page ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+}
+
+.dark .contacts-page ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Force filter option label color in dark mode for select sources dropdown */
+.dark .contacts-page .filter-option-label {
+  color: #ffffff !important;
+}
+
+/* ========================================
+   ALL BUTTONS - PROFESSIONAL GREEN THEME
+   ======================================== */
+
+.contacts-page button {
+  background: transparent;
+  color: inherit;
+  border: none;
+  transition: all 0.15s ease;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.contacts-page button:hover {
+  transform: none;
+}
+
+/* Secondary buttons (cancel, etc.) */
+.contacts-page button[class*="border"][class*="gray"],
+.contacts-page button[class*="bg-gray"] {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  color: #065f46 !important;
+  border: 2px solid #10b981 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1) !important;
+}
+
+.contacts-page button[class*="border"][class*="gray"]:hover,
+.contacts-page button[class*="bg-gray"]:hover {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Icon buttons (close, etc.) */
+.contacts-page button[class*="text-gray"][class*="hover:text-"] {
+  background: transparent !important;
+  color: #6b7280 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.contacts-page button[class*="text-gray"][class*="hover:text-"]:hover {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: #10b981 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Specific action buttons in table - preserve each color */
+.contacts-page button[class*="bg-green-500"],
+.contacts-page button[class*="bg-green-600"],
+.contacts-page button[class*="bg-green-700"] {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+}
+.contacts-page button[class*="bg-green-500"]:hover,
+.contacts-page button[class*="bg-green-600"]:hover,
+.contacts-page button[class*="bg-green-700"]:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+
+.contacts-page button[class*="bg-blue-500"],
+.contacts-page button[class*="bg-blue-600"],
+.contacts-page button[class*="bg-blue-700"] {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: white !important;
+}
+.contacts-page button[class*="bg-blue-500"]:hover,
+.contacts-page button[class*="bg-blue-600"]:hover,
+.contacts-page button[class*="bg-blue-700"]:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+}
+
+.contacts-page button[class*="bg-red-500"],
+.contacts-page button[class*="bg-red-600"],
+.contacts-page button[class*="bg-red-700"] {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+}
+.contacts-page button[class*="bg-red-500"]:hover,
+.contacts-page button[class*="bg-red-600"]:hover,
+.contacts-page button[class*="bg-red-700"]:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+}
+
+/* Bulk action buttons */
+.contacts-page button[class*="bg-purple"],
+.contacts-page button[class*="bg-indigo"],
+.contacts-page button[class*="bg-teal"] {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+}
+
+.contacts-page button[class*="bg-purple"]:hover,
+.contacts-page button[class*="bg-indigo"]:hover,
+.contacts-page button[class*="bg-teal"]:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+
+/* ========================================
+   FULL WIDTH LAYOUT
+   ======================================== */
+
+.contacts-page .table-container {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  border-radius: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  min-height: 50vh !important;
+  position: relative;
+}
+
+.contacts-page .mobile-cards {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 50vh !important;
+  position: relative;
+}
+
+/* Columns dropdown text color in dark mode */
+.dark .contacts-page .column-dropdown-item,
+.dark .contacts-page .column-dropdown-item span {
+  color: #166534 !important; /* green-700 */
+}
+/* ✅ FIX: Remove green background from contact name button */
+.contacts-page td button {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+/* 🚫 Disable hover background for contact name */
+.contacts-page td button:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+}

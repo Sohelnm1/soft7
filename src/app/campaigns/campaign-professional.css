@@ -1,0 +1,779 @@
+/* ===========================================
+   CAMPAIGNS PAGE - PROFESSIONAL GREEN DESIGN
+   =========================================== */
+
+/* Main Container - Professional Green Background */
+.campaign-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 25%, #bbf7d0 50%, #a7f3d0 75%, #6ee7b7 100%) !important;
+  color: #0f172a !important;
+  padding: 2rem !important;
+  position: relative !important;
+  overflow-x: hidden !important;
+}
+
+.campaign-page::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(16, 185, 129, 0.05) 0%, transparent 50%) !important;
+  pointer-events: none !important;
+}
+
+/* Dark Mode */
+.dark .campaign-page {
+  background: linear-gradient(135deg, #0d1117 0%, #1a1f2e 25%, #2d3441 50%, #374151 75%, #4b5563 100%) !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .campaign-page::before {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(16, 185, 129, 0.1) 0%, transparent 50%) !important;
+}
+
+/* ===========================================
+   HEADER & TITLE
+   =========================================== */
+
+.campaign-page .page-title {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+  text-shadow: 0 2px 4px rgba(16, 185, 129, 0.1) !important;
+  animation: fadeInUp 0.8s ease-out !important;
+}
+
+.dark .campaign-page .page-title {
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* ===========================================
+   CONTROLS & BUTTONS
+   =========================================== */
+
+/* Controls Wrapper */
+.campaign-page .controls-wrapper {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.9) 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  margin-bottom: 2rem !important;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.1) !important;
+  transition: all 0.3s ease !important;
+  animation: slideInFromTop 0.6s ease-out !important;
+}
+
+.campaign-page .controls-wrapper:hover {
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15) !important;
+  transform: translateY(-2px) !important;
+}
+
+.dark .campaign-page .controls-wrapper {
+  background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(45, 52, 65, 0.9) 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Views Button */
+.campaign-page .views-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+  transition: all 0.3s ease !important;
+  animation: bounceIn 0.5s ease-out !important;
+}
+
+.campaign-page .views-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+}
+
+.dark .campaign-page .views-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Filter Button */
+.campaign-page .filter-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+  transition: all 0.3s ease !important;
+  animation: slideInFromLeft 0.7s ease-out !important;
+}
+
+.campaign-page .filter-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+}
+
+.dark .campaign-page .filter-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Views Dropdown Button */
+.campaign-page .views-dropdown button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+  transition: all 0.3s ease !important;
+  animation: slideInFromRight 0.7s ease-out !important;
+}
+
+.campaign-page .views-dropdown button:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Dropdown Menu */
+.campaign-page .views-dropdown .absolute {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 253, 244, 0.95) 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15) !important;
+  animation: fadeInScale 0.3s ease-out !important;
+}
+
+.dark .campaign-page .views-dropdown .absolute {
+  background: linear-gradient(135deg, rgba(26, 31, 46, 0.95) 0%, rgba(45, 52, 65, 0.95) 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Dropdown Items */
+.campaign-page .views-dropdown label {
+  transition: all 0.2s ease !important;
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
+}
+
+.campaign-page .views-dropdown label:hover {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%) !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1) !important;
+}
+
+.dark .campaign-page .views-dropdown label:hover {
+  background: linear-gradient(135deg, #065f46 0%, #047857 50%, #065f46 100%) !important;
+  color: #f1f5f9 !important;
+}
+
+/* ===========================================
+   TABLE DESIGN - PROFESSIONAL & AWESOME
+   =========================================== */
+
+/* Table Container */
+.campaign-page table {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+  backdrop-filter: blur(15px) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 60px rgba(16, 185, 129, 0.15), 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  border: 2px solid rgba(16, 185, 129, 0.1) !important;
+  animation: slideInFromBottom 1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.dark .campaign-page table {
+  background: linear-gradient(135deg, rgba(26, 31, 46, 0.95) 0%, rgba(45, 52, 65, 0.95) 100%) !important;
+  border: 2px solid rgba(16, 185, 129, 0.2) !important;
+  box-shadow: 0 20px 60px rgba(16, 185, 129, 0.2), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Table Header - PROFESSIONAL DESIGN */
+.campaign-page thead {
+  background: linear-gradient(135deg, #10b981 0%, #059669 30%, #047857 70%, #065f46 100%) !important;
+  color: #ffffff !important;
+  text-transform: uppercase !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  font-size: 0.875rem !important;
+  line-height: 1.2 !important;
+  position: relative !important;
+}
+
+.campaign-page thead::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%, rgba(255, 255, 255, 0.05) 100%) !important;
+  pointer-events: none !important;
+}
+
+.campaign-page thead th {
+  padding: 1.25rem 1.75rem !important;
+  border-bottom: 3px solid rgba(255, 255, 255, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.campaign-page thead th:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  transform: translateY(-2px) !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.campaign-page thead th::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 3px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%) !important;
+  animation: shimmer 2s ease-in-out infinite !important;
+}
+
+/* Table Body - PROFESSIONAL ROWS */
+.campaign-page tbody tr {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.08) !important;
+  position: relative !important;
+}
+
+.campaign-page tbody tr:nth-child(even) {
+  background: linear-gradient(135deg, rgba(220, 252, 231, 0.9) 0%, rgba(187, 247, 208, 0.9) 100%) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.campaign-page tbody tr:nth-child(odd) {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.campaign-page tbody tr:hover {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #a7f3d0 100%) !important;
+  transform: translateX(6px) scale(1.01) !important;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.25), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border-left: 5px solid #10b981 !important;
+  z-index: 10 !important;
+}
+
+.dark .campaign-page tbody tr:nth-child(even) {
+  background: linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(75, 85, 99, 0.9) 100%) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.dark .campaign-page tbody tr:nth-child(odd) {
+  background: linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(55, 65, 81, 0.95) 100%) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.dark .campaign-page tbody tr:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 50%, #047857 100%) !important;
+  border-left: 5px solid #10b981 !important;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Table Cells - PROFESSIONAL TEXT */
+.campaign-page tbody td {
+  padding: 1.25rem 1.75rem !important;
+  color: #1a202c !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.4 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  letter-spacing: 0.01em !important;
+}
+
+.dark .campaign-page tbody td {
+  color: #f7fafc !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Status Badges - PROFESSIONAL DESIGN */
+.campaign-page .status-badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  padding: 0.375rem 1rem !important;
+  border-radius: 20px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  animation: fadeInScale 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.campaign-page .status-badge::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+  animation: shimmer 2.5s ease-in-out infinite !important;
+}
+
+/* Active Status */
+.campaign-page .status-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 70%, #047857 100%) !important;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Scheduled Status */
+.campaign-page .status-scheduled {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 70%, #1d4ed8 100%) !important;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Paused Status */
+.campaign-page .status-paused {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 70%, #b45309 100%) !important;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Completed Status */
+.campaign-page .status-completed {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 70%, #6d28d9 100%) !important;
+  box-shadow: 0 3px 10px rgba(139, 92, 246, 0.4) !important;
+}
+
+/* ===========================================
+   ACTION BUTTONS
+   =========================================== */
+
+/* Action Buttons Container */
+.campaign-page .action-buttons {
+  display: flex !important;
+  gap: 0.5rem !important;
+  justify-content: flex-end !important;
+}
+
+/* Individual Action Buttons */
+.campaign-page .action-btn {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.5rem !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2) !important;
+  cursor: pointer !important;
+}
+
+.campaign-page .action-btn:hover {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* View Button */
+.campaign-page .action-btn-view {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding: 0.375rem 1rem !important;
+  border-radius: 20px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.2s ease !important;
+  animation: fadeInScale 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.campaign-page .action-btn-view::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+  animation: shimmer 2.5s ease-in-out infinite !important;
+}
+
+/* Make sure the icon inside the view button is white and no inner border shows */
+.campaign-page .action-btn-view svg,
+.campaign-page .action-btn-view > * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.campaign-page .action-btn-view:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Edit Button */
+.campaign-page .action-btn-edit {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+
+.campaign-page .action-btn-edit:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Delete Button */
+.campaign-page .action-btn-delete {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+}
+
+.campaign-page .action-btn-delete:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ===========================================
+   PAGINATION
+   =========================================== */
+
+.campaign-page .pagination {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.9) 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  border-radius: 1rem !important;
+  padding: 1rem !important;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.1) !important;
+  animation: slideInFromBottom 0.6s ease-out 0.2s both !important;
+}
+
+.dark .campaign-page .pagination {
+  background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(45, 52, 65, 0.9) 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Pagination Buttons */
+.campaign-page .pagination-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.campaign-page .pagination-btn::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+  transition: left 0.5s !important;
+}
+
+.campaign-page .pagination-btn:hover::before {
+  left: 100% !important;
+}
+
+.campaign-page .pagination-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4) !important;
+}
+
+.campaign-page .pagination-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+}
+
+.campaign-page .pagination-btn:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(156, 163, 175, 0.2) !important;
+}
+
+.campaign-page .pagination-btn:disabled:hover {
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(156, 163, 175, 0.2) !important;
+}
+
+/* Pagination Container */
+.campaign-page .pagination-container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 16px !important;
+  margin-top: 32px !important;
+  padding: 24px !important;
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.8) 0%, rgba(220, 252, 231, 0.8) 100%) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.dark .campaign-page .pagination-container {
+  background: linear-gradient(135deg, rgba(26, 31, 46, 0.8) 0%, rgba(45, 52, 65, 0.8) 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Page Info */
+.campaign-page .page-info {
+  color: #374151 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.dark .campaign-page .page-info {
+  color: #f9fafb !important;
+  background: rgba(45, 52, 65, 0.8) !important;
+}
+
+/* ===========================================
+   ANIMATIONS
+   =========================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===========================================
+   RESPONSIVE DESIGN
+   =========================================== */
+
+@media (max-width: 768px) {
+  .campaign-page {
+    padding: 1rem !important;
+  }
+
+  .campaign-page .controls-wrapper {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .campaign-page .page-title {
+    font-size: 2rem !important;
+  }
+
+  .campaign-page table {
+    font-size: 0.875rem !important;
+  }
+
+  .campaign-page thead th,
+  .campaign-page tbody td {
+    padding: 0.75rem 1rem !important;
+  }
+}
+
+/* ===========================================
+   LOADING & EMPTY STATES
+   =========================================== */
+
+.campaign-page .loading-state,
+.campaign-page .empty-state {
+  text-align: center !important;
+  padding: 3rem 1rem !important;
+  color: #6b7280 !important;
+  animation: fadeInUp 0.5s ease-out !important;
+}
+
+.dark .campaign-page .loading-state,
+.dark .campaign-page .empty-state {
+  color: #9ca3af !important;
+}
+
+.campaign-page .loading-state::after {
+  content: '' !important;
+  display: inline-block !important;
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid #10b981 !important;
+  border-radius: 50% !important;
+  border-top-color: transparent !important;
+  animation: spin 1s linear infinite !important;
+  margin-left: 0.5rem !important;
+}
+
+/* Select Dropdown Styling */
+.campaign-page select {
+  background-color: #dcfce7 !important; /* Light green background */
+  border: 1px solid #10b981 !important;
+  color: #065f46 !important;
+  border-radius: 8px !important;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.875rem !important;
+  transition: all 0.3s ease !important;
+}
+
+.campaign-page select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5) !important;
+}
+
+.campaign-page select option {
+  background-color: #dcfce7 !important;
+  color: #065f46 !important;
+  padding: 0.5rem !important;
+}
+
+.campaign-page select option:hover {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===========================================
+   SCROLLBAR STYLING
+   =========================================== */
+
+.campaign-page ::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.campaign-page ::-webkit-scrollbar-track {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-radius: 4px !important;
+}
+
+.campaign-page ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border-radius: 4px !important;
+  transition: all 0.3s ease !important;
+}
+
+.campaign-page ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+
+.dark .campaign-page ::-webkit-scrollbar-track {
+  background: rgba(16, 185, 129, 0.2) !important;
+}

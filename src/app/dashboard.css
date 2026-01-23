@@ -1,0 +1,385 @@
+/* WA_Dashboard-main/src/app/dashboard.css */
+
+/* ===================================================
+   SPARKLING BUTTON ANIMATIONS & PROFESSIONAL EFFECTS
+   =================================================== */
+
+@keyframes sparkle {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.5), inset 0 0 30px rgba(16, 185, 129, 0.2);
+  }
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes smooth-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes scale-hover {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.02);
+  }
+}
+
+/* ===================================================
+   CARD ANIMATIONS & HOVER EFFECTS
+   =================================================== */
+
+.dashboard-card-animated {
+  animation: float-up 0.6s ease-out;
+}
+
+.dashboard-card-animated:hover {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.metric-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.metric-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
+}
+
+/* ===================================================
+   TEXT & ICON ANIMATIONS
+   =================================================== */
+
+.icon-spin {
+  animation: smooth-rotate 2s linear infinite;
+}
+
+.icon-spin:hover {
+  animation-duration: 0.8s;
+}
+
+.icon-bounce {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ===================================================
+   GRADIENT ANIMATIONS
+   =================================================== */
+
+.gradient-animated {
+  background-size: 300% 300%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* ===================================================
+   SMOOTH PAGE TRANSITIONS
+   =================================================== */
+
+.dashboard-container {
+  animation: float-up 0.8s ease-out;
+  background: linear-gradient(135deg, #d1fae5 0%, #10b981 100%);
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.dashboard-container {
+  animation: float-up 0.8s ease-out;
+  background: linear-gradient(135deg, #d1fae5 0%, #10b981 100%);
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .dashboard-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+/* Dark mode styles for dashboard elements */
+.dark .metric-card,
+.dark .dashboard-card-animated {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #f3f4f6;
+}
+
+.dark .text-green-900,
+.dark .text-green-700,
+.dark .text-green-600 {
+  color: #10b981;
+}
+
+.dark .bg-gradient-to-br.from-green-50.to-green-100 {
+  background: linear-gradient(to bottom right, #064e3b, #065f46);
+}
+
+.dark .bg-gradient-to-br.from-amber-50.to-orange-50 {
+  background: linear-gradient(to bottom right, #92400e, #ea580c);
+}
+
+.dark .bg-gradient-to-br.from-green-50.to-emerald-50 {
+  background: linear-gradient(to bottom right, #064e3b, #047857);
+}
+
+.dark .text-gray-900 {
+  color: #f3f4f6;
+}
+
+.dark .text-gray-600 {
+  color: #9ca3af;
+}
+
+.metric-row {
+  display: grid;
+  gap: 1.5rem;
+  animation: float-up 0.8s ease-out;
+}
+
+.metric-row > * {
+  animation: float-up 0.6s ease-out;
+}
+
+.metric-row > :nth-child(1) { animation-delay: 0.1s; }
+.metric-row > :nth-child(2) { animation-delay: 0.2s; }
+.metric-row > :nth-child(3) { animation-delay: 0.3s; }
+.metric-row > :nth-child(4) { animation-delay: 0.4s; }
+
+.content-section {
+  animation: float-up 0.8s ease-out 0.5s both;
+}
+
+.content-section:nth-child(1) { animation-delay: 0.6s; }
+.content-section:nth-child(2) { animation-delay: 0.7s; }
+.content-section:nth-child(3) { animation-delay: 0.8s; }
+
+/* ===================================================
+   BUTTON STYLES WITH SPARKLE
+   =================================================== */
+
+.btn-sparkle {
+  position: relative;
+  padding: 12px 24px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  background-color: #10B981;
+  color: white;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.btn-sparkle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.7);
+}
+
+.btn-sparkle:active {
+  transform: translateY(0);
+}
+
+/* ===================================================
+   INTERACTIVE HOVER STATES
+   =================================================== */
+
+.hover-lift {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+}
+
+/* ===================================================
+   LOADING & SKELETON ANIMATIONS
+   =================================================== */
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-load {
+  background: linear-gradient(
+    90deg,
+    #d1fae5 25%,
+    #a7f3d0 50%,
+    #d1fae5 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 2s infinite;
+}
+
+/* ===================================================
+   SMOOTH TRANSITIONS FOR ALL ELEMENTS
+   =================================================== */
+
+button,
+a,
+.interactive {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  transition: all 0.3s ease;
+}
+
+/* ===================================================
+   ENHANCED VISUAL EFFECTS
+   =================================================== */
+
+.shadow-glow {
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.2);
+}
+
+.shadow-depth {
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-elevated {
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.12),
+    0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ===================================================
+   BACKDROP EFFECTS
+   =================================================== */
+
+.backdrop-blur-enhanced {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(16, 185, 129, 0.2);
+}
+
+.dark .backdrop-blur-enhanced {
+  background-color: rgba(11, 17, 32, 0.8);
+}
+
+/* ===================================================
+   RESPONSIVE ANIMATIONS
+   =================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===================================================
+   STAGGERED LIST ANIMATIONS
+   =================================================== */
+
+.stagger-list > * {
+  animation: float-up 0.6s ease-out;
+}
+
+.stagger-list > :nth-child(1) { animation-delay: 0s; }
+.stagger-list > :nth-child(2) { animation-delay: 0.1s; }
+.stagger-list > :nth-child(3) { animation-delay: 0.2s; }
+.stagger-list > :nth-child(4) { animation-delay: 0.3s; }
+.stagger-list > :nth-child(5) { animation-delay: 0.4s; }
+.stagger-list > :nth-child(n+6) { animation-delay: 0.5s; }
