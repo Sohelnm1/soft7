@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Pencil, PlusCircle, Info, Settings, Zap,
     Webhook, BookOpen, Loader2,
@@ -379,9 +379,9 @@ const LogsTab = () => {
         }
     };
 
-    useState(() => {
+    useEffect(() => {
         fetchLogs();
-    });
+    }, []);
 
     return (
         <div className="p-8 pt-0">

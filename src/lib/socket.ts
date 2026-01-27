@@ -19,8 +19,5 @@ export function initSocket(server: any) {
 }
 
 export function getIO() {
-  if (!io) {
-    throw new Error("Socket.io not initialized");
-  }
   return io;
 }
