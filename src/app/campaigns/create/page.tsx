@@ -13,10 +13,15 @@ import {
   Users,
   Tag as TagIcon,
   X,
+  CreditCard,
+  Target,
+  Layout,
+  Settings,
 } from "lucide-react";
 import TemplateSelectionModal from "@/components/TemplateSelectionModal";
+import { getTemplateVariables, TemplateVariable } from "@/lib/template-utils";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 type Contact = {
   id: number;
@@ -35,6 +40,25 @@ type Group = {
   name: string;
 };
 
+type Template = {
+  id: string;
+  name: string;
+  language: string;
+  category: string;
+  status: string;
+  components: any;
+};
+
+const CONTACT_FIELDS = [
+  { value: "name", label: "Contact Name" },
+  { value: "phone", label: "Phone Number" },
+  { value: "email", label: "Email Address" },
+  { value: "source", label: "Lead Source" },
+  { value: "interiorDesign", label: "Interior Design" },
+  { value: "name1", label: "Name 1" },
+  { value: "test", label: "Test Field" },
+];
+
 export default function CreateCampaignPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
@@ -44,6 +68,7 @@ export default function CreateCampaignPage() {
     type: "WhatsApp",
     messageTemplate: "",
     selectedTemplate: "",
+    variableMapping: {} as Record<string, { type: "field" | "static", value: string }>,
     schedulingMode: "later" as "now" | "later",
     audience: {
       selectAll: false,
@@ -56,6 +81,9 @@ export default function CreateCampaignPage() {
     endDate: "",
     endTime: "17:00",
   });
+
+  const [templateVariables, setTemplateVariables] = useState<TemplateVariable[]>([]);
+  const [selectedTemplateObj, setSelectedTemplateObj] = useState<Template | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
@@ -157,12 +185,17 @@ export default function CreateCampaignPage() {
   };
 
   const handleNext = () => {
-    if (step === 3 && !validateSchedule()) {
+    if (step === 1 && !form.selectedTemplate) {
+      setError("Please select a message template");
       return;
     }
-    if (step < 4) {
+    if (step === 4 && !validateSchedule()) {
+      return;
+    }
+    if (step < 5) {
       setStep((s) => (s + 1) as Step);
     }
+    window.scrollTo(0, 0);
   };
 
   const handlePrev = () => {
@@ -246,7 +279,7 @@ export default function CreateCampaignPage() {
       contact.phone.includes(allContactsSearch)
   );
 
-  const steps = ["Basic Info", "Contact", "Schedule", "Review"];
+  const steps = ["Basic Info", "Variables", "Contact", "Schedule", "Review"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 py-8 px-4">
@@ -281,7 +314,7 @@ export default function CreateCampaignPage() {
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
-              style={{ width: `${((step - 1) / 3) * 100}%` }}
+              style={{ width: `${((step - 1) / 4) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -377,13 +410,121 @@ export default function CreateCampaignPage() {
               onSelect={(template) => {
                 updateField("messageTemplate", template.name);
                 updateField("selectedTemplate", template.id);
+                setSelectedTemplateObj(template);
+                const vars = getTemplateVariables(template.components || []);
+                setTemplateVariables(vars);
+
+                // Initialize mapping
+                const mapping: Record<string, { type: "field" | "static", value: string }> = {};
+                vars.forEach(v => {
+                  if (v.name === "1" || v.name.toLowerCase() === "name") {
+                    mapping[v.name] = { type: "field", value: "name" };
+                  } else {
+                    mapping[v.name] = { type: "field", value: "" };
+                  }
+                });
+                updateField("variableMapping", mapping);
+
                 setTemplateModalOpen(false);
               }}
               selectedTemplateId={form.selectedTemplate}
             />
 
-            {/* Step 2: Contact/Audience */}
+            {/* Step 2: Variable Mapping */}
             {step === 2 && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">Variable Mapping</h2>
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
+                    {templateVariables.length} Variables Found
+                  </span>
+                </div>
+
+                {templateVariables.length === 0 ? (
+                  <div className="p-8 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                    <p className="text-gray-500">No variables found in the selected template.</p>
+                    <p className="text-xs text-gray-400 mt-1">You can skip this step.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {templateVariables.map((variable) => (
+                      <div key={`${variable.component}:${variable.name}`} className="p-5 border-2 border-gray-100 rounded-xl hover:border-emerald-200 transition-colors bg-gray-50/50">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1">
+                              {variable.component === "HEADER" ? <Layout size={14} className="text-emerald-500" /> : <MessageSquare size={14} className="text-emerald-500" />}
+                              Variable {"{{"}{variable.name}{"}}"}
+                            </label>
+                            <p className="text-xs text-gray-500 italic">
+                              "{variable.originalMatch}" in {variable.component.toLowerCase()}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-3 items-end">
+                            <select
+                              value={form.variableMapping[variable.name]?.type || "field"}
+                              onChange={(e) => {
+                                const newMapping = { ...form.variableMapping };
+                                newMapping[variable.name] = {
+                                  type: e.target.value as "field" | "static",
+                                  value: ""
+                                };
+                                updateField("variableMapping", newMapping);
+                              }}
+                              className="w-full sm:w-32 border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                            >
+                              <option value="field">Contact Field</option>
+                              <option value="static">Static Value</option>
+                            </select>
+
+                            {form.variableMapping[variable.name]?.type === "field" ? (
+                              <select
+                                value={form.variableMapping[variable.name]?.value || ""}
+                                onChange={(e) => {
+                                  const newMapping = { ...form.variableMapping };
+                                  newMapping[variable.name] = { ...newMapping[variable.name], value: e.target.value };
+                                  updateField("variableMapping", newMapping);
+                                }}
+                                className="w-full sm:w-48 border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                              >
+                                <option value="">Select Field...</option>
+                                {CONTACT_FIELDS.map(f => (
+                                  <option key={f.value} value={f.value}>{f.label}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                value={form.variableMapping[variable.name]?.value || ""}
+                                onChange={(e) => {
+                                  const newMapping = { ...form.variableMapping };
+                                  newMapping[variable.name] = { ...newMapping[variable.name], value: e.target.value };
+                                  updateField("variableMapping", newMapping);
+                                }}
+                                placeholder="Enter custom value..."
+                                className="w-full sm:w-48 border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Visual Preview Alert */}
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                  <CreditCard className="w-5 h-5 text-emerald-600 mt-1" />
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-800">Dynamic Personalization</p>
+                    <p className="text-xs text-emerald-700">When sending, we'll replace these variables with the actual data for each contact.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Contact/Audience */}
+            {step === 3 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Select Contacts</h2>
 
@@ -529,8 +670,8 @@ export default function CreateCampaignPage() {
               </div>
             )}
 
-            {/* Step 3: Schedule */}
-            {step === 3 && (
+            {/* Step 4: Schedule */}
+            {step === 4 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Schedule Campaign</h2>
 
@@ -647,8 +788,8 @@ export default function CreateCampaignPage() {
               </div>
             )}
 
-            {/* Step 4: Review */}
-            {step === 4 && (
+            {/* Step 5: Review */}
+            {step === 5 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Review & Launch</h2>
 
@@ -676,6 +817,25 @@ export default function CreateCampaignPage() {
                         : "None"
                     }
                   />
+
+                  {/* Variable Mappings Review */}
+                  {templateVariables.length > 0 && (
+                    <div className="border-b border-emerald-200 py-2">
+                      <p className="font-semibold text-gray-700 mb-2">Variable Mappings:</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {templateVariables.map(v => (
+                          <div key={v.name} className="flex justify-between text-xs p-2 bg-white rounded border">
+                            <span className="font-medium text-emerald-600">{"{{"}{v.name}{"}}"}</span>
+                            <span className="text-gray-500">
+                              {form.variableMapping[v.name]?.type === "field"
+                                ? `Linked to ${CONTACT_FIELDS.find(f => f.value === form.variableMapping[v.name]?.value)?.label || 'Field'}`
+                                : `Static: "${form.variableMapping[v.name]?.value}"`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {form.schedulingMode === "now" ? (
                     <div className="flex justify-between items-center py-2 border-b border-emerald-200">
@@ -715,7 +875,7 @@ export default function CreateCampaignPage() {
               Prev
             </button>
 
-            {step < 4 ? (
+            {step < 5 ? (
               <button
                 onClick={handleNext}
                 disabled={submitting}

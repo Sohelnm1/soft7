@@ -36,6 +36,10 @@ export interface TemplateFormState {
     buttons: { type: 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER', text: string, url?: string, phoneNumber?: string }[];
     whatsappAccountId: number | null;
     headerHandle?: string;
+    bodyExamples?: Record<string, string>;
+    headerExamples?: Record<string, string>;
+    buttonExamples?: Record<number, string>; // index -> example full URL
+    variableFormat: 'positional' | 'named'; // Type of variable: Number (positional) or Name (named)
 }
 
 interface Props {
@@ -59,7 +63,11 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
         bodyText: "",
         footerText: "",
         buttons: [],
-        whatsappAccountId: null
+        whatsappAccountId: null,
+        bodyExamples: {},
+        headerExamples: {},
+        buttonExamples: {},
+        variableFormat: "positional"
     });
 
     const [uploadMode, setUploadMode] = useState<'UPLOAD' | 'LIBRARY'>('UPLOAD');
@@ -104,6 +112,10 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
                     alert(`Button ${i + 1}: Invalid URL format. Must start with http:// or https://`);
                     return;
                 }
+                if (btn.url.includes('{{1}}') && !form.buttonExamples?.[i]) {
+                    alert(`Button ${i + 1}: Please provide an example for the dynamic URL`);
+                    return;
+                }
             }
             if (btn.type === 'PHONE_NUMBER') {
                 if (!btn.phoneNumber) {
@@ -114,6 +126,62 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
                     alert(`Button ${i + 1}: Invalid phone number. Must start with + and include country code`);
                     return;
                 }
+            }
+        }
+
+        // Validate Examples for variables
+        const bodyVars = getDetectedVariables(form.bodyText);
+        const headerVars = form.headerType === 'TEXT' ? getDetectedVariables(form.headerText) : [];
+        const isNamed = (name: string) => isNaN(parseInt(name));
+
+        const hasNamed = bodyVars.some(isNamed) || headerVars.some(isNamed);
+        const hasPositional = bodyVars.some(v => !isNamed(v)) || headerVars.some(v => !isNamed(v));
+
+        if (form.variableFormat === 'positional' && hasNamed) {
+            alert("This template is set to 'Number' format, but you have used named variables like {{name}}. Please use {{1}}, {{2}} etc. or change the Variable Type to 'Name'.");
+            return;
+        }
+
+        if (form.variableFormat === 'named' && hasPositional) {
+            alert("This template is set to 'Name' format, but you have used positional variables like {{1}}. Please use descriptive names like {{name}} or change the Variable Type to 'Number'.");
+            return;
+        }
+
+        // Validate Button variables (URL buttons only support positional {{1}})
+        for (let i = 0; i < form.buttons.length; i++) {
+            const btn = form.buttons[i];
+            if (btn.type === 'URL' && btn.url) {
+                const btnVars = getDetectedVariables(btn.url);
+                if (btnVars.length > 0) {
+                    if (btnVars.length > 1 || btnVars[0] !== '1') {
+                        alert(`Button ${i + 1}: URL buttons only support a single positional variable {{1}}.`);
+                        return;
+                    }
+                    if (hasNamed) {
+                        alert(`Variable format mismatch: Template uses named variables, but URL buttons only support positional variables ({{1}}). Meta does not allow mixing formats.`);
+                        return;
+                    }
+                }
+            }
+            if (btn.type === 'QUICK_REPLY' && btn.text) {
+                if (getDetectedVariables(btn.text).length > 0) {
+                    alert(`Button ${i + 1}: Quick Reply buttons do not support variables.`);
+                    return;
+                }
+            }
+        }
+
+        for (const v of bodyVars) {
+            if (!form.bodyExamples?.[v]) {
+                alert(`Please provide an example value for body variable {{${v}}}`);
+                return;
+            }
+        }
+
+        for (const v of headerVars) {
+            if (!form.headerExamples?.[v]) {
+                alert(`Please provide an example value for header variable {{${v}}}`);
+                return;
             }
         }
 
@@ -313,6 +381,23 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
         });
     };
 
+    const getDetectedVariables = (text: string) => {
+        const matches = text.match(/\{\{([^}]+)\}\}/g);
+        if (!matches) return [];
+        // Extract names and sort them
+        const vars = Array.from(new Set(matches.map(m => m.replace(/\{\{|\}\}/g, "").trim())))
+            .sort((a, b) => {
+                const aNum = parseInt(a);
+                const bNum = parseInt(b);
+                if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                return a.localeCompare(b);
+            });
+        return vars;
+    };
+
+    const bodyVars = getDetectedVariables(form.bodyText);
+    const headerVars = form.headerType === 'TEXT' ? getDetectedVariables(form.headerText) : [];
+
     return (
         <div className="relative">
             {loading && (
@@ -401,6 +486,30 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
                                 )}
                             </div>
                         </div>
+
+                        {/* Variable Type Selector - Matching Meta's UI */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-semibold text-lg">Type of variable</h2>
+                                <div className="group relative">
+                                    <div className="cursor-help w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-gray-600 font-bold">i</div>
+                                    <div className="absolute left-6 top-0 w-64 p-2 bg-gray-800 text-white text-xs rounded hidden group-hover:block z-10">
+                                        Choose 'Number' for positional variables like {"{{1}}"}, {"{{2}}"}.
+                                        Choose 'Name' for descriptive variables like {"{{name}}"}, {"{{order_id}}"}.
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-full sm:w-64">
+                                <select
+                                    value={form.variableFormat}
+                                    onChange={e => setForm({ ...form, variableFormat: e.target.value as 'positional' | 'named' })}
+                                    className="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                >
+                                    <option value="positional">Number ({"{{1}}, {{2}}"})</option>
+                                    <option value="named">Name ({"{{var_name}}"})</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Header */}
@@ -431,6 +540,25 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
                                 <div className={`text-xs text-right ${form.headerText.length > META_LIMITS.HEADER_TEXT_LENGTH - 10 ? 'text-orange-500' : 'text-gray-400'}`}>
                                     {form.headerText.length}/{META_LIMITS.HEADER_TEXT_LENGTH}
                                 </div>
+                                {headerVars.length > 0 && (
+                                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100 space-y-3">
+                                        <p className="text-xs font-bold text-blue-700 uppercase">Header Variable Examples</p>
+                                        {headerVars.map(v => (
+                                            <div key={v} className="flex flex-col gap-1">
+                                                <label className="text-[10px] text-gray-500 font-medium">Value for {'{{' + v + '}}'}</label>
+                                                <input
+                                                    value={form.headerExamples?.[v] || ""}
+                                                    onChange={e => setForm({
+                                                        ...form,
+                                                        headerExamples: { ...form.headerExamples, [v]: e.target.value }
+                                                    })}
+                                                    placeholder={`e.g. John`}
+                                                    className="w-full border rounded-md px-2 py-1 text-xs"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                         {(form.headerType === 'IMAGE' || form.headerType === 'VIDEO' || form.headerType === 'DOCUMENT') && (
@@ -598,9 +726,34 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
                             value={form.bodyText}
                             onChange={e => setForm({ ...form, bodyText: e.target.value })}
                             className="w-full border rounded-lg px-3 py-2 text-sm h-32 font-mono"
-                            placeholder="Enter your message text here. Use {{1}}, {{2}} for variables."
+                            placeholder={form.variableFormat === 'positional'
+                                ? "Enter your message text here. Use {{1}}, {{2}} for variables."
+                                : "Enter your message text here. Use {{first_name}}, {{order_id}} for variables."
+                            }
                             maxLength={META_LIMITS.BODY_TEXT_LENGTH}
                         />
+
+                        {bodyVars.length > 0 && (
+                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 space-y-3">
+                                <p className="text-xs font-bold text-blue-700 uppercase">Body Variable Examples</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {bodyVars.map(v => (
+                                        <div key={v} className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 font-medium">Value for {'{{' + v + '}}'}</label>
+                                            <input
+                                                value={form.bodyExamples?.[v] || ""}
+                                                onChange={e => setForm({
+                                                    ...form,
+                                                    bodyExamples: { ...form.bodyExamples, [v]: e.target.value }
+                                                })}
+                                                placeholder={`Sample for {{${v}}}`}
+                                                className="w-full border rounded-md px-2 py-1 text-xs"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center">
                             <p className="text-xs text-gray-400">
                                 Formatting: *bold* _italic_ ~strikethrough~ | Variables: {'{{1}}'} {'{{2}}'}
@@ -717,6 +870,23 @@ export default function TemplateForm({ initialData, onSubmit, loading, mode, rea
                                                     Must start with http:// or https://. Can include {'{{1}}'} for dynamic URLs.
                                                 </p>
                                             </div>
+                                            {btn.url && btn.url.includes('{{1}}') && (
+                                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 space-y-2">
+                                                    <label className="text-xs font-bold text-blue-700 uppercase block">URL Example</label>
+                                                    <input
+                                                        value={form.buttonExamples?.[idx] || ''}
+                                                        onChange={e => {
+                                                            setForm({
+                                                                ...form,
+                                                                buttonExamples: { ...form.buttonExamples, [idx]: e.target.value }
+                                                            });
+                                                        }}
+                                                        className="w-full border rounded px-3 py-2 text-sm bg-white"
+                                                        placeholder="Full sample URL (e.g. https://example.com/summer-sale)"
+                                                    />
+                                                    <p className="text-[10px] text-gray-500">Provide a full URL with a sample value replaced.</p>
+                                                </div>
+                                            )}
                                             {btn.url && !isValidUrl(btn.url) && (
                                                 <p className="text-xs text-red-500">⚠ Invalid URL format. Must start with http:// or https://</p>
                                             )}

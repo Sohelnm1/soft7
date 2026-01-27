@@ -209,6 +209,7 @@ model Campaign {
   audienceData     Json?
   messageTemplate  String?
   selectedTemplate String?
+  variableMapping  Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   leadsCount       Int       @default(0)
@@ -531,4 +532,17 @@ model WhatsAppTemplate {
   components        Json?
   qualityRating     String?
   rejectionReason   String?
+}
+
+model IncomingWebhook {
+  id          Int      @id @default(autoincrement())
+  payload     Json
+  status      String   @default("PENDING") // PENDING, PROCESSED, FAILED
+  eventType   String?  // status, message, etc.
+  error       String?
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([status])
+  @@index([createdAt])
 }

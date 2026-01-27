@@ -10,7 +10,8 @@ export interface MetaTemplate {
 }
 
 export async function fetchTemplatesFromMeta(wabaId: string, accessToken: string, apiVersion: string = "v22.0"): Promise<MetaTemplate[]> {
-    const url = `https://graph.facebook.com/${apiVersion}/${wabaId}/message_templates`;
+    const fields = "name,components,language,status,category,id,rejection_reason,quality_score";
+    const url = `https://graph.facebook.com/${apiVersion}/${wabaId}/message_templates?fields=${fields}`;
 
     // Pagination handling might be needed for large numbers of templates, 
     // but for now we'll fetch the first page. Meta usually returns a decent amount.
@@ -21,6 +22,7 @@ export async function fetchTemplatesFromMeta(wabaId: string, accessToken: string
 
     try {
         while (nextUrl) {
+            console.log(`[Meta Sync] Fetching: ${nextUrl}`);
             const response = await fetch(nextUrl, {
                 method: "GET",
                 headers: {
@@ -35,6 +37,16 @@ export async function fetchTemplatesFromMeta(wabaId: string, accessToken: string
             }
 
             const data = await response.json();
+            console.log(`[Meta Sync] Received ${data.data?.length} templates`);
+
+            // Log a sample if there are templates
+            if (data.data?.length > 0) {
+                const sample = data.data.find((t: any) => t.status === "REJECTED");
+                if (sample) {
+                    console.log(`[Meta Sync] Debug REJECTED Template:`, JSON.stringify(sample, null, 2));
+                }
+            }
+
             allTemplates = [...allTemplates, ...data.data];
 
             // Check for pagination
@@ -73,7 +85,7 @@ export async function syncTemplatesForUser(userId: number) {
                 continue;
             }
 
-            const metaTemplates = await fetchTemplatesFromMeta(account.wabaId, account.accessToken, account.apiVersion);
+            const metaTemplates = await fetchTemplatesFromMeta(account.wabaId, account.accessToken, account.apiVersion || "v22.0");
 
             // 2. Sync to DB
             // We will process each template.
@@ -94,7 +106,24 @@ export async function syncTemplatesForUser(userId: number) {
             let syncedCount = 0;
 
             for (const t of metaTemplates) {
-                // Mapping Meta status to our status
+                let rejectionReason = (t as any).rejection_reason || (t as any).reason || null;
+
+                // Fallback: If REJECTED but no reason, fetch individual template node
+                if (t.status === "REJECTED" && !rejectionReason) {
+                    try {
+                        const detailUrl = `https://graph.facebook.com/${account.apiVersion || "v22.0"}/${t.id}?fields=rejection_reason,status`;
+                        const detailRes = await fetch(detailUrl, {
+                            headers: { Authorization: `Bearer ${account.accessToken}` },
+                        });
+                        if (detailRes.ok) {
+                            const detailData = await detailRes.json();
+                            rejectionReason = detailData.rejection_reason || detailData.reason || null;
+                            console.log(`[Meta Sync] Individual fetch for ${t.name} (REJECTED): reason=${rejectionReason}`);
+                        }
+                    } catch (detailErr) {
+                        console.error(`[Meta Sync] Failed to fetch individual details for ${t.name}:`, detailErr);
+                    }
+                }
 
                 await prisma.whatsAppTemplate.upsert({
                     where: {
@@ -110,6 +139,7 @@ export async function syncTemplatesForUser(userId: number) {
                         language: t.language,
                         components: t.components || [],
                         qualityRating: (t as any).quality_score?.score || 'UNKNOWN',
+                        rejectionReason: rejectionReason,
                     },
                     create: {
                         whatsappAccountId: account.id,
@@ -121,6 +151,7 @@ export async function syncTemplatesForUser(userId: number) {
                         isDefault: false,
                         components: t.components || [],
                         qualityRating: (t as any).quality_score?.score || 'UNKNOWN',
+                        rejectionReason: rejectionReason,
                     }
                 });
                 syncedCount++;

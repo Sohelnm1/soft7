@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp";
+import { getTemplateVariables } from "@/lib/template-utils";
 
 export async function POST(req: NextRequest) {
     try {
@@ -81,18 +82,42 @@ export async function POST(req: NextRequest) {
         let sentCount = 0;
         let failedCount = 0;
 
+        // Pre-parse variable discovery
+        const templateVariables = getTemplateVariables(template.components as any[] || []);
+        const variableMapping = (campaign as any).variableMapping as Record<string, { type: "field" | "static", value: string }> || {};
+
         // Iterate and send
-        // In a production environment, this should be offloaded to a queue (Inngest/BullMQ)
-        // For V1 MVP, we process synchronously or loop here (might timeout if list is huge)
         for (const contact of contacts) {
             try {
-                // For now, variables are empty or would need to be passed in
+                // Resolve variables for this contact
+                const parameters: string[] = templateVariables.map((v) => {
+                    const mapping = variableMapping[v.name];
+                    if (!mapping) return "";
+
+                    if (mapping.type === "static") {
+                        return mapping.value || "";
+                    }
+
+                    if (mapping.type === "field") {
+                        // Resolve from contact field
+                        return String((contact as any)[mapping.value] || "");
+                    }
+
+                    return "";
+                });
+
+                if (!contact.phone) {
+                    console.warn(`Skipping contact ${contact.id} because phone is null`);
+                    failedCount++;
+                    continue;
+                }
+
                 await sendWhatsAppTemplate(
                     contact.phone,
                     template.name,
                     template.language,
                     user.id,
-                    [], // variables
+                    parameters, // resolved variables
                     campaign.id, // Pass campaignId for tracking
                     contact.id // Pass contactId for message logging
                 );

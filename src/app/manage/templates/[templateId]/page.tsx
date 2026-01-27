@@ -30,6 +30,11 @@ export default function EditTemplatePage({ params }: { params: Promise<{ templat
                 const footer = data.components.find((c: any) => c.type === 'FOOTER');
                 const buttons = data.components.find((c: any) => c.type === 'BUTTONS');
 
+                // Detect variable format
+                const hasNamedParams = data.components.some((c: any) =>
+                    c.example?.body_text_named_params || c.example?.header_text_named_params
+                );
+
                 setInitialData({
                     name: data.name,
                     category: data.category,
@@ -44,7 +49,20 @@ export default function EditTemplatePage({ params }: { params: Promise<{ templat
                         url: b.url,
                         phoneNumber: b.phone_number
                     })) : [],
-                    whatsappAccountId: data.whatsappAccountId
+                    whatsappAccountId: data.whatsappAccountId,
+                    variableFormat: hasNamedParams ? 'named' : 'positional',
+                    bodyExamples: body?.example?.body_text_named_params
+                        ? Object.fromEntries(body.example.body_text_named_params.map((p: any) => [p.param_name, p.example]))
+                        : (body?.example?.body_text?.[0] || []).reduce((acc: any, val: string, idx: number) => {
+                            acc[(idx + 1).toString()] = val;
+                            return acc;
+                        }, {}),
+                    headerExamples: header?.example?.header_text_named_params
+                        ? Object.fromEntries(header.example.header_text_named_params.map((p: any) => [p.param_name, p.example]))
+                        : (header?.example?.header_text || []).reduce((acc: any, val: string, idx: number) => {
+                            acc[(idx + 1).toString()] = val;
+                            return acc;
+                        }, {})
                 });
             } catch (error) {
                 console.error(error);
@@ -59,36 +77,73 @@ export default function EditTemplatePage({ params }: { params: Promise<{ templat
 
     const handleSubmit = async (form: TemplateFormState) => {
         setLoading(true);
-        // Construct components
-        const components = [];
+        const components: any[] = [];
+        // 1. Detect all variables first to drive the structure
+        const bodyVars = form.bodyText.match(/\{\{([^}]+)\}\}/g)?.map(m => m.replace(/\{\{|\}\}/g, "").trim()) || [];
+        const headerVars = (form.headerType === 'TEXT' && form.headerText)
+            ? (form.headerText.match(/\{\{([^}]+)\}\}/g)?.map(m => m.replace(/\{\{|\}\}/g, "").trim()) || [])
+            : [];
+
+        const useNamed = form.variableFormat === 'named';
 
         // Header
         if (form.headerType === 'TEXT' && form.headerText) {
-            components.push({ type: 'HEADER', format: 'TEXT', text: form.headerText });
-        } else if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(form.headerType) && form.headerMediaUrl) {
-            components.push({
-                type: 'HEADER',
-                format: form.headerType,
-                example: { header_handle: [form.headerMediaUrl] }
-            });
+            const headerComponent: any = { type: 'HEADER', format: 'TEXT', text: form.headerText };
+            if (headerVars.length > 0) {
+                if (useNamed) {
+                    headerComponent.example = {
+                        header_text_named_params: [...new Set(headerVars)].map(name => ({
+                            param_name: name,
+                            example: form.headerExamples?.[name] || "Sample"
+                        }))
+                    };
+                } else {
+                    const sortedVars = [...new Set(headerVars)].sort((a, b) => parseInt(a) - parseInt(b));
+                    const headerSamples = sortedVars.map(v => form.headerExamples?.[v] || "Sample");
+                    headerComponent.example = { header_text: headerSamples };
+                }
+            }
+            components.push(headerComponent);
+        } else if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(form.headerType)) {
+            const component: any = { type: 'HEADER', format: form.headerType };
+            if (form.headerHandle) {
+                component.example = { header_handle: [form.headerHandle] };
+            }
+            components.push(component);
         }
 
         // Body
-        components.push({ type: 'BODY', text: form.bodyText });
-
-        // Footer
-        if (form.footerText) {
-            components.push({ type: 'FOOTER', text: form.footerText });
+        const bodyComponent: any = { type: 'BODY', text: form.bodyText };
+        if (bodyVars.length > 0) {
+            if (useNamed) {
+                bodyComponent.example = {
+                    body_text_named_params: [...new Set(bodyVars)].map(name => ({
+                        param_name: name,
+                        example: form.bodyExamples?.[name] || "Sample"
+                    }))
+                };
+            } else {
+                const sortedVars = [...new Set(bodyVars)].sort((a, b) => parseInt(a) - parseInt(b));
+                const bodySamples = sortedVars.map(v => form.bodyExamples?.[v] || "Sample");
+                bodyComponent.example = { body_text: [bodySamples] };
+            }
         }
+        components.push(bodyComponent);
 
-        // Buttons
+        if (form.footerText) components.push({ type: 'FOOTER', text: form.footerText });
         if (form.buttons.length > 0) {
             components.push({
                 type: 'BUTTONS',
-                buttons: form.buttons.map(b => {
+                buttons: form.buttons.map((b, idx) => {
                     if (b.type === 'QUICK_REPLY') return { type: 'QUICK_REPLY', text: b.text };
-                    if (b.type === 'URL') return { type: 'URL', text: b.text, url: b.url };
-                    if (b.type === 'PHONE_NUMBER') return { type: 'PHONE_NUMBER', text: b.text, phone_number: b.phone_number };
+                    if (b.type === 'URL') {
+                        const button: any = { type: 'URL', text: b.text, url: b.url };
+                        if (b.url?.includes('{{1}}') && form.buttonExamples?.[idx]) {
+                            button.example = [form.buttonExamples[idx]];
+                        }
+                        return button;
+                    }
+                    if (b.type === 'PHONE_NUMBER') return { type: 'PHONE_NUMBER', text: b.text, phone_number: b.phoneNumber };
                     return null;
                 }).filter(Boolean)
             });
@@ -100,7 +155,8 @@ export default function EditTemplatePage({ params }: { params: Promise<{ templat
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     category: form.category,
-                    components
+                    components,
+                    parameter_format: form.variableFormat
                 })
             });
 

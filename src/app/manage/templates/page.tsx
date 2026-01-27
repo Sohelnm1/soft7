@@ -22,6 +22,7 @@ interface Template {
   category: string;
   language: string;
   status: string;
+  rejectionReason?: string;
   whatsappAccount: {
     phoneNumber: string;
     wabaId: string;
@@ -67,10 +68,10 @@ export default function WhatsappTemplatesPage() {
       const res = await fetch("/api/templates/sync", { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        alert("Templates synced successfully!");
+        toast.success("Templates synced successfully!");
         fetchTemplates();
       } else {
-        alert("Failed to sync: " + data.error);
+        toast.error("Failed to sync: " + (data.error || "Unknown error"));
       }
     } catch (error) {
       alert("An error occurred during sync.");
@@ -294,12 +295,19 @@ export default function WhatsappTemplatesPage() {
                         </span>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`px-3 py-1 text-[10px] font-bold rounded-full border shadow-sm ${t.status === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
-                          t.status === 'REJECTED' ? 'bg-red-50 text-red-700 border-red-200' :
-                            'bg-yellow-50 text-yellow-700 border-yellow-200'
-                          }`}>
-                          {t.status}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-3 py-1 text-[10px] font-bold rounded-full border shadow-sm w-fit ${t.status === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
+                            t.status === 'REJECTED' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            }`}>
+                            {t.status}
+                          </span>
+                          {t.status === "REJECTED" && (
+                            <span className="text-[10px] text-red-600 font-medium italic max-w-[150px] leading-tight">
+                              Reason: {t.rejectionReason || "Click Sync to fetch"}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-6 text-gray-500 text-xs">
                         <div className="flex flex-col">
@@ -462,6 +470,12 @@ export default function WhatsappTemplatesPage() {
               </div>
               <div className="mt-4 space-y-2 text-sm">
                 <div><span className="font-semibold">Status:</span> <span className={`px-2 py-1 rounded text-xs ${previewTemplate.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{previewTemplate.status}</span></div>
+                {previewTemplate.status === "REJECTED" && (
+                  <div className="bg-red-50 border border-red-100 p-3 rounded-lg mt-2">
+                    <p className="text-xs font-bold text-red-700 uppercase mb-1">Rejection Reason</p>
+                    <p className="text-sm text-red-600">{previewTemplate.rejectionReason || "Meta has not provided a specific reason. Try clicking 'Sync from Meta' on the main templates page to refresh."}</p>
+                  </div>
+                )}
                 <div><span className="font-semibold">Category:</span> {previewTemplate.category}</div>
               </div>
             </div>

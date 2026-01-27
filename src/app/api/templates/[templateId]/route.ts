@@ -43,7 +43,7 @@ export async function PUT(
 
         const { templateId } = await params;
         const body = await req.json();
-        const { components, category } = body;
+        const { components, category, parameter_format } = body;
 
         const template = await prisma.whatsAppTemplate.findUnique({
             where: { id: Number(templateId) },
@@ -68,6 +68,9 @@ export async function PUT(
                 category: category,
                 components: components
             };
+            if (parameter_format) {
+                payload.parameter_format = parameter_format;
+            }
         } else {
             // No Meta template ID - need to sync first
             return NextResponse.json({

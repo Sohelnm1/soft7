@@ -1197,6 +1197,7 @@ export default function InboxPage() {
           isOpen={showTemplateSelector}
           onClose={() => setShowTemplateSelector(false)}
           contactPhone={selectedContact.phone || ""}
+          contactName={selectedContact.name}
           onSend={async (templateId, variables) => {
             try {
               await axiosInstance.post("/api/whatsapp/send-template", {

@@ -67,9 +67,8 @@ function SidebarItem({ expanded, icon, label, href, onClick, className, children
   return (
     <li
       onClick={handleClick}
-      className={`${baseClasses} ${
-        isActive ? activeClasses : inactiveClasses
-      } ${className || ""}`}
+      className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses
+        } ${className || ""}`}
     >
       {children ? (
         children
@@ -77,20 +76,18 @@ function SidebarItem({ expanded, icon, label, href, onClick, className, children
         <>
           {/* Icon */}
           <div
-            className={`transition-colors duration-300 ${
-              isActive
+            className={`transition-colors duration-300 ${isActive
                 ? "text-green-600 dark:text-green-300"
                 : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-300"
-            }`}
+              }`}
           >
             {icon}
           </div>
 
           {/* Label */}
           <span
-            className={`overflow-hidden whitespace-nowrap ${
-              expanded ? "block" : "hidden"
-            }`}
+            className={`overflow-hidden whitespace-nowrap ${expanded ? "block" : "hidden"
+              }`}
           >
             {label}
           </span>
@@ -114,11 +111,28 @@ function SidebarItem({ expanded, icon, label, href, onClick, className, children
 
 export function Sidebar() {
   const { theme } = useTheme();
-const isDark = theme === "dark";
+  const isDark = theme === "dark";
   const [expanded, setExpanded] = useState(true);
   const [manageOpen, setManageOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
+
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Check if any sub-item of "Manage" is active
+    const manageHrefs = [
+      "/manage/templates",
+      "/manage/whatsapp-flows",
+      "/manage/tags",
+      "/manage/columns",
+      "/manage/opts-management",
+      "/manage/webhooks",
+    ];
+    if (manageHrefs.some((href) => pathname === href)) {
+      setManageOpen(true);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -139,7 +153,7 @@ const isDark = theme === "dark";
 
 
 
-  
+
 
   // ✅ Fetch user info on mount
   useEffect(() => {
@@ -161,9 +175,8 @@ const isDark = theme === "dark";
   return (
     <>
       <aside
-        className={`${
-          expanded ? "w-64" : "w-20"
-        } sticky top-0 h-screen transition-all duration-300 ease-in-out`}
+        className={`${expanded ? "w-64" : "w-20"
+          } sticky top-0 h-screen transition-all duration-300 ease-in-out`}
       >
         <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-full flex flex-col border-r border-gray-100 dark:border-gray-800 shadow-lg">
           {/* ✅ Logo Section (Replaced Text with Image) */}
@@ -173,34 +186,32 @@ const isDark = theme === "dark";
           >
             {/* Expanded View Logo */}
             <div
-  className={`flex items-center transition-opacity duration-300 ${
-    expanded ? "opacity-100" : "opacity-0 hidden"
-  }`}
->
-  <Image
-  src={isDark ? "/logo-dark.png" : "/logo-light.png"}
-  alt="SOFT7 Logo"
-  width={100}
-  height={100}
-  className="object-contain transition-all"
-/>
-</div>
+              className={`flex items-center transition-opacity duration-300 ${expanded ? "opacity-100" : "opacity-0 hidden"
+                }`}
+            >
+              <Image
+                src={isDark ? "/logo-dark.png" : "/logo-light.png"}
+                alt="SOFT7 Logo"
+                width={100}
+                height={100}
+                className="object-contain transition-all"
+              />
+            </div>
 
-{/* Collapsed View Logo */}
-<div
-  className={`p-1 flex justify-center ${
-    expanded ? "hidden" : "block"
-  }`}
->
-  <Image
-  src={isDark ? "/logo-dark.png" : "/logo-light.png"}
-  alt="SOFT7 Logo Small"
-  width={40}
-  height={40}
-  className="object-contain transition-all"
-/>
-</div>
-</div>
+            {/* Collapsed View Logo */}
+            <div
+              className={`p-1 flex justify-center ${expanded ? "hidden" : "block"
+                }`}
+            >
+              <Image
+                src={isDark ? "/logo-dark.png" : "/logo-light.png"}
+                alt="SOFT7 Logo Small"
+                width={40}
+                height={40}
+                className="object-contain transition-all"
+              />
+            </div>
+          </div>
           {/* Navigation Section */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
             <ul>
@@ -228,7 +239,7 @@ const isDark = theme === "dark";
                 label="Campaigns"
                 href="/campaigns"
               />
-              
+
               <SidebarItem
                 expanded={expanded}
                 icon={<Blocks size={20} />}
@@ -237,13 +248,12 @@ const isDark = theme === "dark";
               />
 
               {/* Manage Dropdown */}
-  <li
-  className={`p-3 my-1 font-medium rounded-xl cursor-pointer transition-all duration-300 group ${
-    manageOpen
-      ? "dark:bg-gray-800 text-gray-700 dark:text-white"  // DARK MODE OPEN STYLE
-      : "text-gray-600 dark:text-gray-200"
-  }`}
->
+              <li
+                className={`p-3 my-1 font-medium rounded-xl cursor-pointer transition-all duration-300 group ${manageOpen
+                    ? "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-white"  // DARK MODE OPEN STYLE
+                    : "text-gray-600 dark:text-gray-200"
+                  }`}
+              >
 
 
                 <div
@@ -278,11 +288,10 @@ const isDark = theme === "dark";
                 </div>
 
                 <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    manageOpen && expanded ? "max-h-96 mt-2" : "max-h-0"
-                  }`}
+                  className={`overflow-hidden transition-all duration-300 ${manageOpen && expanded ? "max-h-96 mt-2" : "max-h-0"
+                    }`}
                 >
-                  <ul className="ml-5 mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300 border-l-2 border-indigo-200 dark:border-indigo-800">
+                  <ul className="ml-5 mt-1 space-y-1 text-sm text-gray-600 dark:text-gray-300 border-l-2 border-green-100 dark:border-green-900">
                     <LinkItem
                       href="/manage/templates"
                       label="WhatsApp Templates"
@@ -321,7 +330,7 @@ const isDark = theme === "dark";
                 label="Chatbot"
                 href="/chatbot"
               />
-              
+
               <SidebarItem
                 expanded={expanded}
                 icon={<Bot size={20} />}
@@ -334,7 +343,7 @@ const isDark = theme === "dark";
                 label="Flows"
                 href="/flows"
               />
-            
+
               <SidebarItem
                 expanded={expanded}
                 icon={<BookOpenText size={20} />}
@@ -360,59 +369,59 @@ const isDark = theme === "dark";
                 href="/reminder"
               />
               <SidebarItem
-  expanded={expanded}
-  icon={<SettingsIcon size={20} />}
-  label="Settings"
-  onClick={() => (window.location.href = "/settings")}
- className="relative flex items-center gap-3 p-3 my-1 font-medium rounded-xl cursor-pointer transition-all duration-300 group
+                expanded={expanded}
+                icon={<SettingsIcon size={20} />}
+                label="Settings"
+                onClick={() => (window.location.href = "/settings")}
+                className="relative flex items-center gap-3 p-3 my-1 font-medium rounded-xl cursor-pointer transition-all duration-300 group
            text-gray-700 dark:text-gray-200
            hover:bg-green-50 hover:text-green-700
            dark:hover:!bg-black dark:hover:text-white"
 
 
 
->
-  {/* Show Icon and Label when expanded */}
-  {expanded && (
-    <>
-      <SettingsIcon
-        size={20}
-        className="text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors"
-      />
-      <span className="overflow-hidden whitespace-nowrap">Settings</span>
-    </>
-  )}
+              >
+                {/* Show Icon and Label when expanded */}
+                {expanded && (
+                  <>
+                    <SettingsIcon
+                      size={20}
+                      className="text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors"
+                    />
+                    <span className="overflow-hidden whitespace-nowrap">Settings</span>
+                  </>
+                )}
 
-  {/* Show Avatar/icon when collapsed */}
-  {!expanded && (
-    <>
-      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-gray-300 dark:border-gray-600">
-        {user?.image ? (
-          <img
-            src={user.image}
-            alt="User Avatar"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-[var(--theme-color)]/10">
-            <SettingsIcon size={12} className="text-[var(--theme-color)]" />
-          </div>
-        )}
-      </div>
+                {/* Show Avatar/icon when collapsed */}
+                {!expanded && (
+                  <>
+                    <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-gray-300 dark:border-gray-600">
+                      {user?.image ? (
+                        <img
+                          src={user.image}
+                          alt="User Avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-[var(--theme-color)]/10">
+                          <SettingsIcon size={12} className="text-[var(--theme-color)]" />
+                        </div>
+                      )}
+                    </div>
 
-      {/* Tooltip when collapsed */}
-      <div className="absolute left-full rounded-md px-2 py-1 ml-6 bg-green-700 dark:bg-green-800 text-white text-sm invisible opacity-0 translate-x-3 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 z-50">
-        Settings
-      </div>
-    </>
-  )}
-</SidebarItem>
+                    {/* Tooltip when collapsed */}
+                    <div className="absolute left-full rounded-md px-2 py-1 ml-6 bg-green-700 dark:bg-green-800 text-white text-sm invisible opacity-0 translate-x-3 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 z-50">
+                      Settings
+                    </div>
+                  </>
+                )}
+              </SidebarItem>
 
             </ul>
           </div>
         </div>
 
-    <style jsx global>{`
+        <style jsx global>{`
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
@@ -461,14 +470,28 @@ interface LinkItemProps {
 }
 
 function LinkItem({ href, label }: LinkItemProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isActive = pathname === href;
+
   return (
-    <li className="relative">
-      <a
-        href={href}
-        className="sidebar-item block px-3 py-1.5 rounded-lg transition duration-150 border-l-2 border-transparent hover:border-indigo-400 dark:hover:border-indigo-600"
+    <li className="relative group/item">
+      <div
+        onClick={() => router.push(href)}
+        className={`block px-4 py-2 rounded-lg transition-all duration-300 cursor-pointer
+          ${isActive
+            ? "bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-300 font-semibold"
+            : "text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-gray-800 hover:text-green-600 dark:hover:text-green-200"
+          }
+        `}
       >
-        {label}
-      </a>
+        <div className="flex items-center gap-2">
+          {isActive && (
+            <div className="absolute left-[-10px] w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+          )}
+          {label}
+        </div>
+      </div>
     </li>
   );
 }

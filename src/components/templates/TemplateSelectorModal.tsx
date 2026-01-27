@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { X, Search, FileText, Send } from "lucide-react";
 import FormattedText from "./FormattedText";
+import { getTemplateVariables, TemplateVariable } from "@/lib/template-utils";
 
 interface Template {
     id: number;
@@ -16,6 +17,7 @@ interface TemplateSelectorModalProps {
     isOpen: boolean;
     onClose: () => void;
     contactPhone: string;
+    contactName?: string;
     onSend: (templateId: number, variables: Record<string, string>) => Promise<void>;
 }
 
@@ -23,12 +25,14 @@ export function TemplateSelectorModal({
     isOpen,
     onClose,
     contactPhone,
+    contactName,
     onSend,
 }: TemplateSelectorModalProps) {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+    const [templateVars, setTemplateVars] = useState<TemplateVariable[]>([]);
     const [variables, setVariables] = useState<Record<string, string>>({});
     const [sending, setSending] = useState(false);
 
@@ -57,36 +61,20 @@ export function TemplateSelectorModal({
         }
     };
 
-    const extractVariables = (template: Template) => {
-        const vars: string[] = [];
-        template.components?.forEach((component) => {
-            if (component.type === "BODY" && component.text) {
-                const matches = component.text.match(/\{\{(\d+)\}\}/g);
-                if (matches) {
-                    matches.forEach((match: string) => {
-                        const num = match.replace(/\{\{|\}\}/g, "");
-                        if (!vars.includes(num)) vars.push(num);
-                    });
-                }
-            }
-            if (component.type === "HEADER" && component.format === "TEXT" && component.text) {
-                const matches = component.text.match(/\{\{(\d+)\}\}/g);
-                if (matches) {
-                    matches.forEach((match: string) => {
-                        const num = match.replace(/\{\{|\}\}/g, "");
-                        if (!vars.includes(num)) vars.push(num);
-                    });
-                }
-            }
-        });
-        return vars.sort();
-    };
-
     const handleTemplateSelect = (template: Template) => {
         setSelectedTemplate(template);
-        const vars = extractVariables(template);
+        const vars = getTemplateVariables(template.components || []);
+        setTemplateVars(vars);
+
         const initialVars: Record<string, string> = {};
-        vars.forEach((v) => (initialVars[v] = ""));
+        vars.forEach((v) => {
+            // Smart pre-fill: if variable is '1' or 'name', pre-fill with contact name
+            if ((v.name === "1" || v.name.toLowerCase() === "name") && contactName) {
+                initialVars[v.name] = contactName;
+            } else {
+                initialVars[v.name] = "";
+            }
+        });
         setVariables(initialVars);
     };
 
@@ -323,25 +311,25 @@ export function TemplateSelectorModal({
                                     </div>
 
                                     {/* Variables */}
-                                    {Object.keys(variables).length > 0 && (
+                                    {templateVars.length > 0 && (
                                         <div className="mt-6 px-4 pb-4">
                                             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-2">
                                                 Fill variables
                                             </h3>
                                             <div className="space-y-3">
-                                                {Object.keys(variables).map((varNum) => (
-                                                    <div key={varNum}>
+                                                {templateVars.map((variable) => (
+                                                    <div key={`${variable.component}:${variable.name}`}>
                                                         <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                                            Variable {varNum}
+                                                            {variable.component === "HEADER" ? "Header Variable" : "Variable"} {"{{"}{variable.name}{"}}"}
                                                         </label>
                                                         <input
                                                             type="text"
-                                                            value={variables[varNum]}
+                                                            value={variables[variable.name] || ""}
                                                             onChange={(e) =>
-                                                                setVariables({ ...variables, [varNum]: e.target.value })
+                                                                setVariables({ ...variables, [variable.name]: e.target.value })
                                                             }
                                                             className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100"
-                                                            placeholder={`Enter value for {{${varNum}}}`}
+                                                            placeholder={`Enter value for {{${variable.name}}}`}
                                                         />
                                                     </div>
                                                 ))}

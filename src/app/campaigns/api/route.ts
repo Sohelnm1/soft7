@@ -108,6 +108,7 @@ export async function POST(request: Request) {
       userId: currentUser.id,
       messageTemplate: body.messageTemplate,
       selectedTemplate: body.selectedTemplate ? String(body.selectedTemplate) : null,
+      variableMapping: body.variableMapping || null,
       audienceData: body.audience ? {
         selectAll: body.audience.selectAll || false,
         contacts: body.audience.contacts || [],

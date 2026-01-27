@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { name, category, language, components, whatsappAccountId } = body;
+        const { name, category, language, components, whatsappAccountId, parameter_format } = body;
 
         if (!name || !category || !language || !components || !whatsappAccountId) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -25,14 +25,21 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Submit to Meta
-        const url = `https://graph.facebook.com/${account.apiVersion}/${account.wabaId}/message_templates`;
+        const url = `https://graph.facebook.com/${account.apiVersion || "v22.0"}/${account.wabaId}/message_templates`;
 
-        const payload = {
+        const payload: any = {
             name,
             category,
             language,
             components
         };
+
+        if (parameter_format) {
+            payload.parameter_format = parameter_format;
+        }
+
+        console.log(`[Meta Template Create] Target: ${url}`);
+        console.log(`[Meta Template Create] Payload:`, JSON.stringify(payload, null, 2));
 
         const response = await fetch(url, {
             method: "POST",

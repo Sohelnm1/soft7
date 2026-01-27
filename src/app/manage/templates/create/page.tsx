@@ -5,6 +5,7 @@ import { ArrowLeft, Image as ImageIcon, Video, FileText } from "lucide-react";
 import { toast } from "react-hot-toast";
 import TemplateForm, { TemplateFormState } from "@/components/templates/TemplateForm";
 import FormattedText from "@/components/templates/FormattedText";
+import { getTemplateVariables } from "@/lib/template-utils";
 
 export default function CreateTemplatePage() {
     const router = useRouter();
@@ -20,10 +21,39 @@ export default function CreateTemplatePage() {
             return;
         }
 
-        // Construct Meta components
-        const components = [];
+        // Check if we are using named parameters
+        // A variable is named if it's not a simple number
+        const isNamed = (name: string) => isNaN(parseInt(name));
+
+        const components: any[] = [];
+
+        // 1. Detect all variables first to drive the structure
+        const bodyVars = form.bodyText.match(/\{\{([^}]+)\}\}/g)?.map(m => m.replace(/\{\{|\}\}/g, "").trim()) || [];
+        const headerVars = (form.headerType === 'TEXT' && form.headerText)
+            ? (form.headerText.match(/\{\{([^}]+)\}\}/g)?.map(m => m.replace(/\{\{|\}\}/g, "").trim()) || [])
+            : [];
+
+        const useNamed = form.variableFormat === 'named';
+
+        // Header
         if (form.headerType === 'TEXT' && form.headerText) {
-            components.push({ type: 'HEADER', format: 'TEXT', text: form.headerText });
+            const headerComponent: any = { type: 'HEADER', format: 'TEXT', text: form.headerText };
+            if (headerVars.length > 0) {
+                if (useNamed) {
+                    headerComponent.example = {
+                        header_text_named_params: [...new Set(headerVars)].map(name => ({
+                            param_name: name,
+                            example: form.headerExamples?.[name] || "Sample"
+                        }))
+                    };
+                } else {
+                    // Positional: sort numerically
+                    const sortedVars = [...new Set(headerVars)].sort((a, b) => parseInt(a) - parseInt(b));
+                    const headerSamples = sortedVars.map(v => form.headerExamples?.[v] || "Sample");
+                    headerComponent.example = { header_text: headerSamples };
+                }
+            }
+            components.push(headerComponent);
         } else if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(form.headerType)) {
             const component: any = { type: 'HEADER', format: form.headerType };
             if (form.headerHandle) {
@@ -31,14 +61,40 @@ export default function CreateTemplatePage() {
             }
             components.push(component);
         }
-        components.push({ type: 'BODY', text: form.bodyText });
+
+        // Body
+        const bodyComponent: any = { type: 'BODY', text: form.bodyText };
+        if (bodyVars.length > 0) {
+            if (useNamed) {
+                bodyComponent.example = {
+                    body_text_named_params: [...new Set(bodyVars)].map(name => ({
+                        param_name: name,
+                        example: form.bodyExamples?.[name] || "Sample"
+                    }))
+                };
+            } else {
+                // Positional: sort numerically
+                const sortedVars = [...new Set(bodyVars)].sort((a, b) => parseInt(a) - parseInt(b));
+                const bodySamples = sortedVars.map(v => form.bodyExamples?.[v] || "Sample");
+                bodyComponent.example = { body_text: [bodySamples] };
+            }
+        }
+        components.push(bodyComponent);
+
         if (form.footerText) components.push({ type: 'FOOTER', text: form.footerText });
         if (form.buttons.length > 0) {
             components.push({
                 type: 'BUTTONS',
-                buttons: form.buttons.map(b => {
+                buttons: form.buttons.map((b, idx) => {
                     if (b.type === 'QUICK_REPLY') return { type: 'QUICK_REPLY', text: b.text };
-                    if (b.type === 'URL') return { type: 'URL', text: b.text, url: b.url };
+                    if (b.type === 'URL') {
+                        const button: any = { type: 'URL', text: b.text, url: b.url };
+                        // URL buttons only support 1 positional variable: {{1}}
+                        if (b.url?.includes('{{1}}') && form.buttonExamples?.[idx]) {
+                            button.example = [form.buttonExamples[idx]];
+                        }
+                        return button;
+                    }
                     if (b.type === 'PHONE_NUMBER') return { type: 'PHONE_NUMBER', text: b.text, phone_number: b.phoneNumber };
                     return null;
                 }).filter(Boolean)
@@ -54,7 +110,8 @@ export default function CreateTemplatePage() {
                     category: form.category,
                     language: form.language,
                     components,
-                    whatsappAccountId: Number(form.whatsappAccountId)
+                    whatsappAccountId: Number(form.whatsappAccountId),
+                    parameter_format: form.variableFormat
                 })
             });
             const data = await res.json();

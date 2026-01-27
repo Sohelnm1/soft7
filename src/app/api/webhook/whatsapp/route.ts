@@ -33,94 +33,29 @@ export async function GET(req: NextRequest) {
 /* =========================
    RECEIVE CUSTOMER MESSAGE
 ========================= */
+/* =========================
+   RECEIVE WEBHOOK (POST)
+   Fast Ingest Mode: Only record raw payload
+========================= */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const entry = body.entry?.[0];
-    const change = entry?.changes?.[0];
-    const value = change?.value;
-
-    const message = value?.messages?.[0];
-    const contactMeta = value?.contacts?.[0];
-    const metadata = value?.metadata;
-
-    if (!message || !metadata) {
-      return NextResponse.json({ status: "ignored" });
-    }
-
-    const phoneNumberId = metadata.phone_number_id;
-    const from = message.from; // customer phone
-    const name = contactMeta?.profile?.name || from;
-    const text = message.text?.body || "";
-
-    /* 1️⃣ Find WhatsApp account owner */
-    const waAccount = await prisma.whatsAppAccount.findFirst({
-      where: { phoneNumberId }
-    });
-
-    if (!waAccount) {
-      return NextResponse.json({ status: "unknown-number" });
-    }
-
-    const userId = waAccount.userId;
-
-    /* 2️⃣ Find or create Contact */
-    let contact = await prisma.contact.findFirst({
-      where: { userId, phone: from }
-    });
-
-    if (!contact) {
-      contact = await prisma.contact.create({
-        data: {
-          userId,
-          phone: from,
-          name
-        }
-      });
-    }
-
-    /* 3️⃣ Find or create Conversation */
-    const conversation = await prisma.conversation.upsert({
-      where: {
-        userId_phone: {
-          userId,
-          phone: from
-        }
-      },
-      update: {
-        lastInboundAt: new Date()
-      },
-      create: {
-        userId,
-        phone: from,
-        name,
-        lastInboundAt: new Date()
-      }
-    });
-
-    /* 4️⃣ Save INCOMING message */
-    await prisma.message.create({
+    // 1️⃣ Fast Log to DB
+    await prisma.incomingWebhook.create({
       data: {
-        userId,
-        contactId: contact.id,
-        conversationId: conversation.id,
-        content: text,
-        text,
-        sentBy: "customer",
-        from,
-        senderId: from,
-        receiverId: phoneNumberId,
-        direction: "incoming", // ✅ FIXED
-        status: "received",
-        whatsappMessageId: message.id,
-        seen: false
+        payload: body,
+        status: "PENDING"
       }
     });
 
-    return NextResponse.json({ status: "received" });
+    // 2️⃣ Immediate 200 OK Response to Meta
+    return NextResponse.json({ status: "recorded" });
   } catch (error) {
-    console.error("WhatsApp Webhook Error:", error);
+    console.error("WhatsApp Webhook Ingest Error:", error);
+    // Even on error, we usually want to return 200 to Meta to avoid retries 
+    // if the payload was successfully parsed but DB write failed.
+    // However, for debugging we might want 500.
     return NextResponse.json({ status: "error" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getTemplateVariables, formatTemplateParameters } from "@/lib/template-utils";
 
 export async function POST(req: NextRequest) {
     try {
@@ -40,51 +41,18 @@ export async function POST(req: NextRequest) {
         const components: any[] = [];
 
         // Process each component and substitute variables
-        template.components?.forEach((component: any) => {
-            if (component.type === "HEADER" && component.format === "TEXT" && component.text) {
-                const parameters: any[] = [];
-                const matches = component.text.match(/\{\{(\d+)\}\}/g);
-                if (matches) {
-                    matches.forEach((match: string) => {
-                        const varNum = match.replace(/\{\{|\}\}/g, "");
-                        if (variables[varNum]) {
-                            parameters.push({
-                                type: "text",
-                                text: variables[varNum],
-                            });
-                        }
-                    });
-                }
-                if (parameters.length > 0) {
-                    components.push({
-                        type: "header",
-                        parameters,
-                    });
-                }
-            }
+        const templateVars = getTemplateVariables(template.components as any || []);
+        const { header, body, buttons } = formatTemplateParameters(templateVars, variables);
 
-            if (component.type === "BODY" && component.text) {
-                const parameters: any[] = [];
-                const matches = component.text.match(/\{\{(\d+)\}\}/g);
-                if (matches) {
-                    matches.forEach((match: string) => {
-                        const varNum = match.replace(/\{\{|\}\}/g, "");
-                        if (variables[varNum]) {
-                            parameters.push({
-                                type: "text",
-                                text: variables[varNum],
-                            });
-                        }
-                    });
-                }
-                if (parameters.length > 0) {
-                    components.push({
-                        type: "body",
-                        parameters,
-                    });
-                }
-            }
-        });
+        if (header.length > 0) {
+            components.push({ type: "header", parameters: header });
+        }
+        if (body.length > 0) {
+            components.push({ type: "body", parameters: body });
+        }
+        if (buttons.length > 0) {
+            components.push(...buttons);
+        }
 
         // Send template message via Meta API
         const url = `https://graph.facebook.com/${account.apiVersion}/${account.phoneNumberId}/messages`;
@@ -152,7 +120,7 @@ export async function POST(req: NextRequest) {
                     isTemplate: true,
                     templateName: template.name,
                     templateLanguage: template.language,
-                    templateComponents: template.components || null,
+                    templateComponents: (template.components as any) || null,
                     sentBy: "me",
                     errorCode: errorData?.code?.toString(),
                     errorMessage: errorData?.message,
