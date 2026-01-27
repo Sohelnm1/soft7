@@ -40,14 +40,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log("📥 RECEIVED WEBHOOK PAYLOAD:", JSON.stringify(body, null, 2));
 
     // 1️⃣ Fast Log to DB
-    await prisma.incomingWebhook.create({
+    const createdLog = await prisma.incomingWebhook.create({
       data: {
         payload: body,
         status: "PENDING"
       }
     });
+    console.log("✅ Logged webhook to DB with ID:", createdLog.id);
 
     // 2️⃣ Immediate 200 OK Response to Meta
     return NextResponse.json({ status: "recorded" });
