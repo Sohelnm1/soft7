@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 const { prisma } = require("../lib/prisma.worker.cjs");
 
 export class WalletService {
@@ -15,7 +16,7 @@ export class WalletService {
         }
 
         try {
-            return await prisma.$transaction(async (tx) => {
+            return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
                 // 1. Check for existing transaction (Idempotency)
                 const existingTx = await tx.walletTransaction.findUnique({
                     where: { messageId }

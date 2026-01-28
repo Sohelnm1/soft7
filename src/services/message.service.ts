@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 const { prisma } = require("../lib/prisma.worker.cjs");
 import { getIO } from "../lib/socket";
 import { WalletService } from "./wallet.service";
@@ -9,7 +10,7 @@ export class MessageService {
     static async handleStatusUpdate(wamid: string, status: string, details: any) {
         const { timestamp, errorCode, errorMessage } = details;
 
-        return await prisma.$transaction(async (tx) => {
+        return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             // 1. Find message and campaign
             const message = await tx.message.findUnique({
                 where: { whatsappMessageId: wamid },

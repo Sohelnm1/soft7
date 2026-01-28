@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WalletService = void 0;
-const prisma_1 = require("../lib/prisma");
+const { prisma } = require("../lib/prisma.worker.cjs");
 class WalletService {
     /**
      * Deducts wallet balance for a user.
@@ -16,7 +16,7 @@ class WalletService {
             return null;
         }
         try {
-            return await prisma_1.prisma.$transaction(async (tx) => {
+            return await prisma.$transaction(async (tx) => {
                 // 1. Check for existing transaction (Idempotency)
                 const existingTx = await tx.walletTransaction.findUnique({
                     where: { messageId }

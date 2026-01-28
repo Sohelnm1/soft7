@@ -1,4 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Prisma } = require("@prisma/client");
 
 let prisma;
 
@@ -13,4 +13,4 @@ if (global.__prismaWorker) {
   }
 }
 
-module.exports = { prisma };
+module.exports = { prisma, Prisma };

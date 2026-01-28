@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
-const prisma_1 = require("../lib/prisma");
+const { prisma } = require("../lib/prisma.worker.cjs");
 const socket_1 = require("../lib/socket");
 const wallet_service_1 = require("./wallet.service");
 class MessageService {
@@ -10,7 +10,7 @@ class MessageService {
      */
     static async handleStatusUpdate(wamid, status, details) {
         const { timestamp, errorCode, errorMessage } = details;
-        return await prisma_1.prisma.$transaction(async (tx) => {
+        return await prisma.$transaction(async (tx) => {
             // 1. Find message and campaign
             const message = await tx.message.findUnique({
                 where: { whatsappMessageId: wamid },
@@ -92,29 +92,29 @@ class MessageService {
             mediaType = message.type;
             text = `Sent a ${message.type}`;
         }
-        const waAccount = await prisma_1.prisma.whatsAppAccount.findFirst({
+        const waAccount = await prisma.whatsAppAccount.findFirst({
             where: { phoneNumberId }
         });
         if (!waAccount)
             return;
         const userId = waAccount.userId;
         // Contact
-        let contact = await prisma_1.prisma.contact.findFirst({
+        let contact = await prisma.contact.findFirst({
             where: { userId, phone: from }
         });
         if (!contact) {
-            contact = await prisma_1.prisma.contact.create({
+            contact = await prisma.contact.create({
                 data: { userId, phone: from, name }
             });
         }
         // Conversation
-        const conversation = await prisma_1.prisma.conversation.upsert({
+        const conversation = await prisma.conversation.upsert({
             where: { userId_phone: { userId, phone: from } },
             update: { lastInboundAt: new Date() },
             create: { userId, phone: from, name, contactId: contact.id, lastInboundAt: new Date() }
         });
         // Save Message
-        const savedMsg = await prisma_1.prisma.message.create({
+        const savedMsg = await prisma.message.create({
             data: {
                 userId,
                 contactId: contact.id,
