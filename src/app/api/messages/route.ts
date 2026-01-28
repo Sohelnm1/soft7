@@ -103,14 +103,23 @@ export async function POST(req: Request) {
         sentBy: "me",
         direction: "outgoing",
         status: "sent",
-        sentAt: new Date()
+        ...({ sentAt: new Date() } as any)
       },
     });
 
     // 4️⃣ SEND TO REAL WHATSAPP NUMBER 📲
-    await sendWhatsAppMessage(contact.phone, text, user.id);
+    const result = await sendWhatsAppMessage(contact.phone, text, user.id);
 
-    return NextResponse.json(savedMessage);
+    // 5️⃣ Update message with Meta's ID (to enable status tracking via webhooks)
+    const whatsappMessageId = result.messages?.[0]?.id;
+    if (whatsappMessageId) {
+      await prisma.message.update({
+        where: { id: savedMessage.id },
+        data: { whatsappMessageId }
+      });
+    }
+
+    return NextResponse.json({ ...savedMessage, whatsappMessageId });
   } catch (error) {
     console.error("POST /api/messages error:", error);
     return NextResponse.json(

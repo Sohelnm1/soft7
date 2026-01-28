@@ -31,7 +31,7 @@ export class MessageService {
             // 1. Find message and campaign
             const message = await tx.message.findUnique({
                 where: { whatsappMessageId: wamid },
-                select: { id: true, userId: true, campaignId: true, status: true, deliveredAt: true }
+                select: { id: true, userId: true, campaignId: true, status: true, ...({ deliveredAt: true } as any) }
             });
 
             if (!message) {
@@ -48,16 +48,16 @@ export class MessageService {
                 updatedAt: new Date()
             };
 
-            if (status === "sent") updateData.sentAt = statusDate;
-            if (status === "delivered") updateData.deliveredAt = statusDate;
+            if (status === "sent") (updateData as any).sentAt = statusDate;
+            if (status === "delivered") (updateData as any).deliveredAt = statusDate;
             if (status === "read") {
-                updateData.readAt = statusDate;
+                (updateData as any).readAt = statusDate;
                 // If we get a read but don't have a deliveredAt, set it too
-                if (!message.deliveredAt) {
-                    updateData.deliveredAt = statusDate;
+                if (!(message as any).deliveredAt) {
+                    (updateData as any).deliveredAt = statusDate;
                 }
             }
-            if (status === "failed") updateData.failedAt = statusDate;
+            if (status === "failed") (updateData as any).failedAt = statusDate;
 
             const updatedMsg = await tx.message.update({
                 where: { id: message.id },

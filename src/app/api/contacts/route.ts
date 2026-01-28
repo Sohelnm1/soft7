@@ -118,7 +118,7 @@ export async function GET(req: Request) {
             messages: {
               where: {
                 direction: "incoming",
-                readAt: null,
+                ...({ readAt: null } as any),
               },
             },
           },
@@ -187,7 +187,7 @@ export async function GET(req: Request) {
           ...c,
           tags: c.tags?.map((t: any) => t.tag.name).join(","),
           lastMessagePreview,
-          lastMessageTime,
+          lastMessageTime: lastMessage?.createdAt || null, // SEND RAW ISO STRING
           unreadCount: c._count?.messages || 0,
           lastMessageAt: lastMessage?.createdAt || c.createdAt,
           messages: undefined,

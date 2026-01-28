@@ -200,7 +200,7 @@ export default function InboxPage() {
         phone: c.phone ? c.phone.replace(/\D/g, "") : c.phone,
         initials: buildInitials(c.name),
         lastMessagePreview: c.last_message_preview || c.lastMessagePreview || null,
-        lastMessageTime: c.last_message_time || c.lastMessageTime || null,
+        lastMessageTime: c.lastMessageTime || null, // Keeping the raw ISO string for local formatting
         unreadCount: c.unread_count || c.unreadCount || 0,
       }));
     },
@@ -476,7 +476,11 @@ export default function InboxPage() {
 
         <div className="flex flex-col items-end gap-1.5">
           <span className={`text-[10px] ${contact.unreadCount && contact.unreadCount > 0 ? "font-bold text-emerald-600" : "text-gray-400"}`}>
-            {contact.lastMessageTime ?? "N/A"}
+            {contact.lastMessageTime ? new Date(contact.lastMessageTime).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            }) : "N/A"}
           </span>
 
           {(contact.unreadCount ?? 0) > 0 && (
