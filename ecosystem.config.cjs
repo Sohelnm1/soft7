@@ -18,7 +18,18 @@ module.exports = {
       META_APP_ID: process.env.META_APP_ID,
       META_APP_SECRET: process.env.META_APP_SECRET,
       WEBHOOK_URL: process.env.WEBHOOK_URL,
-      EMAILABLE_API_KEY: 'live_67150ed8d69288aaa56d'
+      EMAILABLE_API_KEY: 'live_67150ed8d69288aaa56d',
+      REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379'
+    }
+  }, {
+    name: "wa-webhook-worker",
+    script: "dist/workers/webhook.worker.js", // Assumes build step
+    instances: 1,
+    autorestart: true,
+    max_memory_restart: "700M",
+    env: {
+      NODE_ENV: "production",
+      REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379'
     }
   }]
 }

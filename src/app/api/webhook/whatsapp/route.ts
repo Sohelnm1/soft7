@@ -1,63 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { enqueueWebhook } from "@/queues/webhook.queue";
 
 /* =========================
    VERIFY WEBHOOK (GET)
+   (Kept as is for Meta verification)
 ========================= */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-
   const mode = searchParams.get("hub.mode");
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
   if (mode === "subscribe" && token) {
-    // 1️⃣ Check global token (backward compatibility)
     if (token === process.env.WA_VERIFY_TOKEN) {
       return new NextResponse(challenge, { status: 200 });
     }
-
-    // 2️⃣ Check per-user tokens in DB
     const account = await prisma.whatsAppAccount.findFirst({
       where: { verifyToken: token }
     });
-
     if (account) {
       return new NextResponse(challenge, { status: 200 });
     }
   }
-
   return new NextResponse("Forbidden", { status: 403 });
 }
 
 /* =========================
-   RECEIVE CUSTOMER MESSAGE
-========================= */
-/* =========================
    RECEIVE WEBHOOK (POST)
-   Fast Ingest Mode: Only record raw payload
+   Fast Ingest Mode: Enqueue job for background processing
 ========================= */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log("📥 RECEIVED WEBHOOK PAYLOAD:", JSON.stringify(body, null, 2));
 
-    // 1️⃣ Fast Log to DB
-    const createdLog = await prisma.incomingWebhook.create({
+    // 1️⃣ Fast Ingest: Extract Meta ID for Queue Idempotency
+    const entry = body.entry?.[0];
+    const change = entry?.changes?.[0];
+    const value = change?.value;
+
+    const metaId = value?.messages?.[0]?.id || value?.statuses?.[0]?.id || `wh_${Date.now()}`;
+
+    // 2️⃣ Record raw payload to DB
+    const log = await prisma.incomingWebhook.create({
       data: {
         payload: body,
         status: "PENDING"
       }
     });
-    console.log("✅ Logged webhook to DB with ID:", createdLog.id);
 
-    // 2️⃣ Immediate 200 OK Response to Meta
-    return NextResponse.json({ status: "recorded" });
-  } catch (error) {
-    console.error("WhatsApp Webhook Ingest Error:", error);
-    // Even on error, we usually want to return 200 to Meta to avoid retries 
-    // if the payload was successfully parsed but DB write failed.
-    // However, for debugging we might want 500.
-    return NextResponse.json({ status: "error" }, { status: 500 });
+    // 3️⃣ Enqueue for async processing
+    // Deterministic metaId ensures BullMQ drops duplicate retries within the same backoff window
+    await enqueueWebhook(metaId, log.id, body);
+
+    // 4️⃣ Return 200 OK Immediately (<100ms goal)
+    return NextResponse.json({ status: "accepted", id: log.id });
+
+  } catch (error: any) {
+    console.error("WhatsApp Webhook Ingest Error:", error.message);
+    // Return 200 to Meta to avoid retries if the payload was received but processing enqueued
+    return NextResponse.json({ status: "error", message: error.message }, { status: 200 });
   }
 }

@@ -144,6 +144,8 @@ model User {
   subscriptionStart  DateTime?
   subscriptionEnd    DateTime?
   razorpayCustomerId String?
+  walletBalance     Float             @default(0)
+  walletTransactions WalletTransaction[]
   aiAssistants       AiAssistant[]
   campaigns          Campaign[]
   chatbots           Chatbot[]
@@ -545,4 +547,17 @@ model IncomingWebhook {
 
   @@index([status])
   @@index([createdAt])
+}
+
+model WalletTransaction {
+  id        String   @id @default(cuid())
+  userId    Int
+  amount    Float
+  messageId String?  @unique // Meta message_id for idempotency
+  type      String   // DEDUCTION, REFUND, TOPUP
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("wallet_transactions")
 }
