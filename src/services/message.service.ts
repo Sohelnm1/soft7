@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { getIO } from "@/lib/socket";
+import { prisma } from "../lib/prisma";
+import { getIO } from "../lib/socket";
 import { WalletService } from "./wallet.service";
 
 export class MessageService {
