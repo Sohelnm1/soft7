@@ -2,8 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const { prisma } = require("../lib/prisma.worker.cjs");
-const socket_1 = require("../lib/socket");
 const wallet_service_1 = require("./wallet.service");
+// Lazy-load socket only if available (Next.js runtime)
+let getSocketIO = null;
+try {
+    getSocketIO = require("../lib/socket").getIO;
+}
+catch (e) {
+    // BullMQ Worker environment
+}
 class MessageService {
     /**
      * Updates the status of a message and triggers wallet deduction if needed.
@@ -60,7 +67,7 @@ class MessageService {
                 }
             }
             // Emit Socket update
-            const io = (0, socket_1.getIO)();
+            const io = getSocketIO?.();
             if (io) {
                 io.emit("message_status_update", { wamid, status });
             }
@@ -130,7 +137,7 @@ class MessageService {
                 type: message.type
             }
         });
-        const io = (0, socket_1.getIO)();
+        const io = getSocketIO?.();
         if (io) {
             io.emit("new_message", savedMsg);
         }

@@ -1,7 +1,14 @@
 import type { Prisma } from "@prisma/client";
 const { prisma } = require("../lib/prisma.worker.cjs");
-import { getIO } from "../lib/socket";
 import { WalletService } from "./wallet.service";
+
+// Lazy-load socket only if available (Next.js runtime)
+let getSocketIO: any = null;
+try {
+    getSocketIO = require("../lib/socket").getIO;
+} catch (e) {
+    // BullMQ Worker environment
+}
 
 export class MessageService {
     /**
@@ -62,7 +69,7 @@ export class MessageService {
             }
 
             // Emit Socket update
-            const io = getIO();
+            const io = getSocketIO?.();
             if (io) {
                 io.emit("message_status_update", { wamid, status });
             }
@@ -139,7 +146,7 @@ export class MessageService {
             }
         });
 
-        const io = getIO();
+        const io = getSocketIO?.();
         if (io) {
             io.emit("new_message", savedMsg);
         }
