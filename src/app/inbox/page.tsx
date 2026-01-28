@@ -410,17 +410,24 @@ export default function InboxPage() {
     status,
     direction,
     error,
+    readAt,
+    deliveredAt,
   }: {
     status?: string;
     direction?: string;
     error?: string | null;
+    readAt?: any;
+    deliveredAt?: any;
   }) => {
     if (direction !== "outgoing") return null;
 
-    if (status === "read") {
-      return <CheckCheck size={14} className="text-blue-600 ml-0.5" />;
+    const isRead = status === "read" || !!readAt;
+    const isDelivered = status === "delivered" || !!deliveredAt || isRead;
+
+    if (isRead) {
+      return <CheckCheck size={14} className="text-emerald-500 ml-0.5" />;
     }
-    if (status === "delivered") {
+    if (isDelivered) {
       return <CheckCheck size={14} className="text-slate-500 ml-0.5" />;
     }
     if (status === "failed") {
@@ -1004,7 +1011,13 @@ export default function InboxPage() {
                                   minute: "2-digit",
                                 })}
                               </span>
-                              <MessageStatus status={msg.status} direction={msg.direction} error={msg.error} />
+                              <MessageStatus
+                                status={msg.status}
+                                direction={msg.direction}
+                                error={msg.error}
+                                readAt={(msg as any).readAt}
+                                deliveredAt={(msg as any).deliveredAt}
+                              />
                             </div>
                           </div>
                         ) : (
@@ -1019,7 +1032,13 @@ export default function InboxPage() {
                                   minute: "2-digit",
                                 })}
                               </span>
-                              <MessageStatus status={msg.status} direction={msg.direction} error={msg.error} />
+                              <MessageStatus
+                                status={msg.status}
+                                direction={msg.direction}
+                                error={msg.error}
+                                readAt={(msg as any).readAt}
+                                deliveredAt={(msg as any).deliveredAt}
+                              />
                             </div>
                           </div>
                         )}
