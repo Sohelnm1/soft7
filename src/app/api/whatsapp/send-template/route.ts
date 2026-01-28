@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         const url = `https://graph.facebook.com/${account.apiVersion}/${account.phoneNumberId}/messages`;
         const payload = {
             messaging_product: "whatsapp",
-            to: contact.phone,
+            to: (contact.phone || "").replace(/\D/g, ""),
             type: "template",
             template: {
                 name: template.name,
@@ -116,6 +116,8 @@ export async function POST(req: NextRequest) {
                     direction: "outgoing",
                     type: "template",
                     status: sendSuccess ? "sent" : "failed",
+                    sentAt: sendSuccess ? new Date() : null,
+                    failedAt: !sendSuccess ? new Date() : null,
                     text: `Template: ${template.name}`,
                     isTemplate: true,
                     templateName: template.name,

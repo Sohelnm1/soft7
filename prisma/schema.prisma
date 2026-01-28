@@ -108,7 +108,11 @@ model Message {
 
   errorCode    String?
   errorMessage String?
-  error        String? @db.Text // ADD THIS
+  error        String? @db.Text
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  readAt       DateTime?
+  failedAt     DateTime?
   sentBy       String?
   sentById     Int?
   campaignId   String?

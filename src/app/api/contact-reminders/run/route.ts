@@ -32,11 +32,9 @@ export async function GET() {
         text: reminder.message,
 
         sentBy: "me",         // ✅ RIGHT SIDE
-        from: "me",           // same as normal outgoing
-        senderId: "me",       // same as normal outgoing
-        receiverId: "contact",
-
-        seen: false,
+        direction: "outgoing",
+        status: "sent",
+        sentAt: new Date()
       },
     });
 

@@ -25,6 +25,7 @@ import {
   Tag,
   Bell,
   FileText,
+  AlertCircle,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axiosInstance";
@@ -56,6 +57,8 @@ interface Message {
   from?: string;
   isTemplate?: boolean;
   templateComponents?: any;
+  error?: string | null;
+  errorCode?: string | null;
 }
 
 interface ContactItemProps {
@@ -136,6 +139,24 @@ export default function InboxPage() {
     defaultValues: { message: "" },
   });
   const messageValue = watch("message");
+
+  // Mark as Read Mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: async (contactId: number) => {
+      await axiosInstance.post("/api/messages/mark-as-read", { contactId });
+    },
+    onSuccess: () => {
+      // Refresh contacts to update unread counts
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
+  });
+
+  const handleContactSelect = (contact: Contact) => {
+    setSelectedContact(contact);
+    if ((contact.unreadCount ?? 0) > 0) {
+      markAsReadMutation.mutate(contact.id);
+    }
+  };
 
   const sideBarMenuIcon = [
     {
@@ -388,19 +409,31 @@ export default function InboxPage() {
   const MessageStatus = ({
     status,
     direction,
+    error,
   }: {
     status?: string;
     direction?: string;
+    error?: string | null;
   }) => {
     if (direction !== "outgoing") return null;
 
     if (status === "read") {
-      return <CheckCheck size={14} className="text-blue-500 ml-1" />;
+      return <CheckCheck size={14} className="text-blue-600 ml-0.5" />;
     }
     if (status === "delivered") {
-      return <CheckCheck size={14} className="text-gray-500 ml-1" />;
+      return <CheckCheck size={14} className="text-slate-500 ml-0.5" />;
     }
-    return <Check size={14} className="text-gray-400 ml-1" />;
+    if (status === "failed") {
+      return (
+        <span
+          title={error || "Message delivery failed"}
+          className="ml-1 cursor-help flex items-center group/fail"
+        >
+          <AlertCircle size={14} className="text-red-600 animate-pulse transition-transform hover:scale-110" />
+        </span>
+      );
+    }
+    return <Check size={14} className="text-slate-400 ml-0.5" />;
   };
 
   const getContactReminders = (contactId: number) =>
@@ -427,9 +460,11 @@ export default function InboxPage() {
           </div>
 
           <div className="flex-1">
-            <p className="font-semibold">{contact.name}</p>
+            <p className={`text-sm ${contact.unreadCount && contact.unreadCount > 0 ? "font-bold text-gray-900 dark:text-white" : "font-semibold text-gray-700 dark:text-gray-200"}`}>
+              {contact.name}
+            </p>
             {contact.lastMessagePreview && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[180px]">
+              <p className={`text-xs truncate max-w-[180px] ${contact.unreadCount && contact.unreadCount > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400"}`}>
                 {contact.lastMessagePreview}
               </p>
             )}
@@ -439,13 +474,13 @@ export default function InboxPage() {
           </div>
         </div>
 
-        <div className="text-right">
-          <span className="text-[10px] text-gray-500">
+        <div className="flex flex-col items-end gap-1.5">
+          <span className={`text-[10px] ${contact.unreadCount && contact.unreadCount > 0 ? "font-bold text-emerald-600" : "text-gray-400"}`}>
             {contact.lastMessageTime ?? "N/A"}
           </span>
 
           {(contact.unreadCount ?? 0) > 0 && (
-            <span className="unread-badge ml-2 text-xs font-bold text-white w-5 h-5 flex items-center justify-center rounded-full">
+            <span className="bg-emerald-500 text-white text-[10px] font-bold min-w-[20px] h-[20px] px-1.5 flex items-center justify-center rounded-full shadow-sm animate-in zoom-in duration-300">
               {contact.unreadCount}
             </span>
           )}
@@ -838,7 +873,7 @@ export default function InboxPage() {
                     key={c.id}
                     contact={c}
                     isSelected={selectedContact?.id === c.id}
-                    onClick={() => setSelectedContact(c)}
+                    onClick={() => handleContactSelect(c)}
                     reminders={getContactReminders(c.id)}
                   />
                 ))}
@@ -889,7 +924,7 @@ export default function InboxPage() {
                         {selectedContact?.name}
                       </span>
                       <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                        Connected
+                        {selectedContact?.phone ? `+${selectedContact.phone}` : "Connected"}
                       </span>
                     </div>
                   </div>
@@ -956,27 +991,33 @@ export default function InboxPage() {
                           }`}
                       >
                         {msg.isTemplate && msg.templateComponents ? (
-                          <div className="flex flex-col">
+                          <div className="flex flex-col gap-1">
                             <TemplateMessage components={msg.templateComponents} />
-                            <div className="message-meta text-[10px] text-right flex items-center justify-end gap-1 mt-1 px-2">
-                              {new Date(msg.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                              <MessageStatus status={msg.status} direction={msg.direction} />
+                            <div className="message-meta text-[10px] text-right flex items-center justify-end gap-1.5 opacity-60">
+                              <span className="font-medium">
+                                {new Date(msg.createdAt).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              <MessageStatus status={msg.status} direction={msg.direction} error={msg.error} />
                             </div>
                           </div>
                         ) : (
-                          <>
-                            {msg.text}
-                            <div className="message-meta text-[10px] text-right flex items-center justify-end gap-1">
-                              {new Date(msg.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                              <MessageStatus status={msg.status} direction={msg.direction} />
+                          <div className="flex flex-col gap-0.5">
+                            <div className="message-text pr-2 leading-relaxed">
+                              {msg.text}
                             </div>
-                          </>
+                            <div className="message-meta text-[10px] text-right flex items-center justify-end gap-1.5 opacity-60">
+                              <span className="font-medium">
+                                {new Date(msg.createdAt).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              <MessageStatus status={msg.status} direction={msg.direction} error={msg.error} />
+                            </div>
+                          </div>
                         )}
                       </div>
 

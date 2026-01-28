@@ -75,7 +75,10 @@ export async function POST(req: Request) {
 
     // 2️⃣ Conversation
     let conversation = await prisma.conversation.findFirst({
-      where: { phone: contact.phone },
+      where: {
+        userId: user.id,
+        phone: contact.phone
+      },
     });
 
     if (!conversation) {
@@ -84,6 +87,7 @@ export async function POST(req: Request) {
           phone: contact.phone,
           name: contact.name,
           userId: user.id,
+          contactId: contact.id
         },
       });
     }
@@ -97,12 +101,9 @@ export async function POST(req: Request) {
         content: text,
         text,
         sentBy: "me",
-        from: "me",
-        senderId: "me",
-        receiverId: contact.phone,
         direction: "outgoing",
-        seen: true,
-        status: "sent"
+        status: "sent",
+        sentAt: new Date()
       },
     });
 

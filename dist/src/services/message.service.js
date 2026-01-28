@@ -3,6 +3,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const { prisma } = require("../lib/prisma.worker.cjs");
 const wallet_service_1 = require("./wallet.service");
+/**
+ * Normalizes a phone number by removing non-numeric characters
+ * and ensuring it doesn't have a leading + or 00.
+ */
+function normalizePhone(phone) {
+    if (!phone)
+        return phone;
+    // Remove all non-digits
+    return phone.replace(/\D/g, "");
+}
 // Lazy-load socket only if available (Next.js runtime)
 let getSocketIO = null;
 try {
@@ -40,12 +50,21 @@ class MessageService {
             // 3. Update Campaign Stats if applicable
             if (message.campaignId) {
                 const updateData = {};
-                if (status === "delivered")
+                // If status is 'read', we should also ensure 'delivered' is accounted for if not already
+                if (status === "delivered") {
                     updateData.deliveredCount = { increment: 1 };
-                if (status === "read")
+                }
+                else if (status === "read") {
                     updateData.readCount = { increment: 1 };
-                if (status === "failed")
+                    // Check if previous status was NOT delivered/read to avoid double counting 
+                    // or missing delivery count if they arrive out of order
+                    if (message.status !== "delivered" && message.status !== "read") {
+                        updateData.deliveredCount = { increment: 1 };
+                    }
+                }
+                else if (status === "failed") {
                     updateData.failedCount = { increment: 1 };
+                }
                 if (Object.keys(updateData).length > 0) {
                     await tx.campaign.update({
                         where: { id: message.campaignId },
@@ -79,11 +98,13 @@ class MessageService {
      */
     static async handleInbound(message, contactMeta, metadata) {
         const phoneNumberId = metadata.phone_number_id;
-        const from = message.from;
+        const rawFrom = message.from;
+        const from = normalizePhone(rawFrom); // Normalize the incoming phone number
         const name = contactMeta?.profile?.name || from;
         let text = "";
         let mediaUrl = null;
         let mediaType = null;
+        let caption = null; // New
         if (message.type === "text") {
             text = message.text?.body || "";
         }
@@ -95,9 +116,10 @@ class MessageService {
         }
         else if (["image", "video", "audio", "document"].includes(message.type)) {
             const media = message[message.type];
-            mediaUrl = media.id;
+            mediaUrl = media.id; // WhatsApp internal ID
             mediaType = message.type;
-            text = `Sent a ${message.type}`;
+            caption = media.caption || null;
+            text = caption || `Sent a ${message.type}`;
         }
         const waAccount = await prisma.whatsAppAccount.findFirst({
             where: { phoneNumberId }
@@ -105,9 +127,15 @@ class MessageService {
         if (!waAccount)
             return;
         const userId = waAccount.userId;
-        // Contact
+        // Contact Lookup with normalization (Digits only vs +prefix)
         let contact = await prisma.contact.findFirst({
-            where: { userId, phone: from }
+            where: {
+                userId,
+                OR: [
+                    { phone: from },
+                    { phone: `+${from}` }
+                ]
+            }
         });
         if (!contact) {
             contact = await prisma.contact.create({
@@ -130,6 +158,7 @@ class MessageService {
                 content: text,
                 mediaUrl,
                 mediaType,
+                caption, // Added
                 sentBy: "customer",
                 direction: "incoming",
                 status: "sent",

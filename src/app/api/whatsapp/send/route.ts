@@ -44,15 +44,13 @@ export async function POST(req: NextRequest) {
           userId: user.id,
           conversationId: conversation.id,
           contactId: 0, // Should ideally find contactId
-          from: "business",
           content: message,
           text: message,
-          senderId: "business",
-          receiverId: phone,
           direction: "outgoing",
           sentBy: "business",
-          status: "sent"
-        } as any
+          status: "sent",
+          sentAt: new Date()
+        }
       });
     }
 

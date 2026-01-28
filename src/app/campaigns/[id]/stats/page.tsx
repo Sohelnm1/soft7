@@ -26,6 +26,10 @@ type Message = {
     templateName?: string;
     conversationId: string;
     whatsappMessageId?: string;
+    sentAt?: string;
+    deliveredAt?: string;
+    readAt?: string;
+    failedAt?: string;
 };
 
 type CampaignData = {
@@ -111,7 +115,7 @@ export default function CampaignStatsPage() {
         if (!stats) return 0;
         const total = stats.totalContacts;
         if (total === 0) return 0;
-        const successful = stats.sentCount + stats.deliveredCount + stats.readCount;
+        const successful = stats.sentCount;
         return ((successful / total) * 100).toFixed(1);
     };
 
@@ -213,16 +217,16 @@ export default function CampaignStatsPage() {
                                 <div
                                     className="bg-blue-500"
                                     style={{
-                                        width: `${(stats.sentCount / stats.totalContacts) * 100}%`,
+                                        width: `${((stats.sentCount - stats.deliveredCount) / stats.totalContacts) * 100}%`,
                                     }}
-                                    title={`Sent: ${stats.sentCount}`}
+                                    title={`Sent Only: ${stats.sentCount - stats.deliveredCount}`}
                                 />
                                 <div
                                     className="bg-green-500"
                                     style={{
-                                        width: `${(stats.deliveredCount / stats.totalContacts) * 100}%`,
+                                        width: `${((stats.deliveredCount - stats.readCount) / stats.totalContacts) * 100}%`,
                                     }}
-                                    title={`Delivered: ${stats.deliveredCount}`}
+                                    title={`Delivered Only: ${stats.deliveredCount - stats.readCount}`}
                                 />
                                 <div
                                     className="bg-purple-500"
@@ -271,8 +275,8 @@ export default function CampaignStatsPage() {
                                     key={status}
                                     onClick={() => setStatusFilter(status)}
                                     className={`px-4 py-2 rounded-lg font-medium transition ${statusFilter === status
-                                            ? "bg-blue-600 text-white"
-                                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                                         }`}
                                 >
                                     {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -351,7 +355,17 @@ export default function CampaignStatsPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {new Date(msg.createdAt).toLocaleString()}
+                                                {(() => {
+                                                    let date;
+                                                    if (statusFilter === "read") date = msg.readAt;
+                                                    else if (statusFilter === "delivered") date = msg.deliveredAt;
+                                                    else if (statusFilter === "failed") date = msg.failedAt;
+                                                    else if (statusFilter === "sent") date = msg.sentAt;
+
+                                                    // Fallback to createdAt if specific status time is missing 
+                                                    // (e.g., for 'all' filter or older records)
+                                                    return new Date(date || msg.createdAt).toLocaleString();
+                                                })()}
                                             </td>
                                             <td className="px-6 py-4">
                                                 {msg.status === "failed" && msg.errorMessage ? (

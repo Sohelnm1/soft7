@@ -52,7 +52,13 @@ export async function GET(
         };
 
         if (statusFilter !== "all") {
-            messageWhere.status = statusFilter;
+            if (statusFilter === "sent") {
+                messageWhere.status = { in: ["sent", "delivered", "read"] };
+            } else if (statusFilter === "delivered") {
+                messageWhere.status = { in: ["delivered", "read"] };
+            } else {
+                messageWhere.status = statusFilter;
+            }
         }
 
         if (searchQuery) {
@@ -85,9 +91,8 @@ export async function GET(
 
         const stats = {
             totalContacts: campaign.leadsCount,
-            sentCount: allMessages.filter((m) => m.status === "sent").length,
-            deliveredCount: allMessages.filter((m) => m.status === "delivered")
-                .length,
+            sentCount: allMessages.filter((m) => ["sent", "delivered", "read"].includes(m.status)).length,
+            deliveredCount: allMessages.filter((m) => ["delivered", "read"].includes(m.status)).length,
             failedCount: allMessages.filter((m) => m.status === "failed").length,
             readCount: allMessages.filter((m) => m.status === "read").length,
         };
@@ -100,6 +105,10 @@ export async function GET(
             contactPhone: msg.contact.phone,
             status: msg.status,
             createdAt: msg.createdAt,
+            sentAt: msg.sentAt,
+            deliveredAt: msg.deliveredAt,
+            readAt: msg.readAt,
+            failedAt: msg.failedAt,
             errorMessage: msg.errorMessage,
             errorCode: msg.errorCode,
             error: msg.error,

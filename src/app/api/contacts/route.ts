@@ -104,7 +104,6 @@ export async function GET(req: Request) {
     // Default: Full contact list with tags and last message data (for inbox)
     const contacts = await prisma.contact.findMany({
       where: { userId: currentUser.id },
-      orderBy: { createdAt: "desc" },
       include: {
         user: {
           select: { id: true, email: true, name: true },
@@ -112,6 +111,16 @@ export async function GET(req: Request) {
         tags: {
           include: {
             tag: true,
+          },
+        },
+        _count: {
+          select: {
+            messages: {
+              where: {
+                direction: "incoming",
+                readAt: null,
+              },
+            },
           },
         },
         messages: {
@@ -129,60 +138,67 @@ export async function GET(req: Request) {
       },
     });
 
-    const formatted = contacts.map((c) => {
-      const lastMessage = c.messages[0];
+    const formatted = (contacts as any[])
+      .map((c) => {
+        const lastMessage = c.messages?.[0];
 
-      // Format last message preview
-      let lastMessagePreview = null;
-      if (lastMessage) {
-        if (lastMessage.isTemplate) {
-          lastMessagePreview = "📄 Template message";
-        } else if (lastMessage.text) {
-          lastMessagePreview =
-            lastMessage.text.length > 40
-              ? lastMessage.text.substring(0, 40) + "..."
-              : lastMessage.text;
+        // Format last message preview
+        let lastMessagePreview = null;
+        if (lastMessage) {
+          if (lastMessage.isTemplate) {
+            lastMessagePreview = "📄 Template message";
+          } else if (lastMessage.text) {
+            lastMessagePreview =
+              lastMessage.text.length > 40
+                ? lastMessage.text.substring(0, 40) + "..."
+                : lastMessage.text;
+          }
         }
-      }
 
-      // Format last message time
-      let lastMessageTime = null;
-      if (lastMessage) {
-        const msgDate = new Date(lastMessage.createdAt);
-        const now = new Date();
+        // Format last message time
+        let lastMessageTime = null;
+        if (lastMessage) {
+          const msgDate = new Date(lastMessage.createdAt);
+          const now = new Date();
+          const isToday = msgDate.toDateString() === now.toDateString();
 
-        // Check if message is from today
-        const isToday = msgDate.toDateString() === now.toDateString();
-
-        if (isToday) {
-          // Show time only (e.g., "3:46 PM")
-          lastMessageTime = msgDate.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          });
-        } else {
-          // Show date and time (e.g., "Jan 21, 3:46 PM")
-          lastMessageTime = msgDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          }) + ", " + msgDate.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          });
+          if (isToday) {
+            lastMessageTime = msgDate.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+          } else {
+            lastMessageTime =
+              msgDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }) +
+              ", " +
+              msgDate.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              });
+          }
         }
-      }
 
-      return {
-        ...c,
-        tags: c.tags.map((t) => t.tag.name).join(","),
-        lastMessagePreview,
-        lastMessageTime,
-        unreadCount: 0, // TODO: Calculate actual unread count
-        messages: undefined, // Remove messages array from response
-      };
-    });
+        return {
+          ...c,
+          tags: c.tags?.map((t: any) => t.tag.name).join(","),
+          lastMessagePreview,
+          lastMessageTime,
+          unreadCount: c._count?.messages || 0,
+          lastMessageAt: lastMessage?.createdAt || c.createdAt,
+          messages: undefined,
+        };
+      })
+      .sort((a, b) => {
+        // Sort by lastMessageAt descending
+        const dateA = new Date(a.lastMessageAt).getTime();
+        const dateB = new Date(b.lastMessageAt).getTime();
+        return dateB - dateA;
+      });
 
     return NextResponse.json(formatted);
   } catch (error: unknown) {

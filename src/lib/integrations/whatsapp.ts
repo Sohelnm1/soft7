@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
+// Helper to ensure phone number only contains digits for Meta API
+export function cleanPhoneNumber(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
 export async function sendWhatsAppMessage(
   to: string,
   text: string,
@@ -21,7 +26,7 @@ export async function sendWhatsAppMessage(
 
   const payload = {
     messaging_product: "whatsapp",
-    to,
+    to: cleanPhoneNumber(to),
     type: "text",
     text: { body: text }
   };

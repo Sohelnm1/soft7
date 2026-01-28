@@ -12,9 +12,8 @@
     "lint": "eslint",
     "worker": "tsx src/workers/webhook.worker.ts",
     "verify-wallet": "tsx scripts/verify-wallet.ts",
-    "build:worker": "tsc -p tsconfig.worker.json",
+    "build:worker": "tsc -p tsconfig.worker.json && npx shx cp src/lib/prisma.worker.cjs dist/src/lib/prisma.worker.cjs",
     "build:all": "next build && npm run build:worker"
-
   },
   "keywords": [],
   "author": "",

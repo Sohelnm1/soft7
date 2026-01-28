@@ -42,6 +42,11 @@ function extractTemplateContent(components: any, parameters?: any[]): string {
   return content.trim();
 }
 
+// Helper to ensure phone number only contains digits for Meta API
+export function cleanPhoneNumber(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
 // Your existing function - KEEP THIS for replies within 24-hour window
 export async function sendWhatsAppMessage(
   to: string,
@@ -64,7 +69,7 @@ export async function sendWhatsAppMessage(
 
   const payload = {
     messaging_product: "whatsapp",
-    to,
+    to: cleanPhoneNumber(to),
     type: "text",
     text: { body: text }
   };
@@ -134,7 +139,7 @@ export async function sendWhatsAppTemplate(
 
   const payload: any = {
     messaging_product: "whatsapp",
-    to,
+    to: cleanPhoneNumber(to),
     type: "template",
     template: {
       name: templateName,
@@ -222,6 +227,8 @@ export async function sendWhatsAppTemplate(
           direction: "outgoing",
           type: "template",
           status: sendSuccess ? "sent" : "failed",
+          sentAt: sendSuccess ? new Date() : null,
+          failedAt: !sendSuccess ? new Date() : null,
           text: templateContent,
           isTemplate: true,
           templateName,
