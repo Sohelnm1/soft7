@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.webhookWorker = void 0;
 const bullmq_1 = require("bullmq");
 const ioredis_1 = __importDefault(require("ioredis"));
-const prisma_1 = require("@/lib/prisma");
+const prisma_1 = require("../lib/prisma");
 const message_service_1 = require("../services/message.service");
 const connection = new ioredis_1.default(process.env.REDIS_URL || "redis://localhost:6379", {
     maxRetriesPerRequest: null,

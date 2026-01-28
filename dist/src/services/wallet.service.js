@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WalletService = void 0;
-const prisma_1 = require("@/lib/prisma");
+const prisma_1 = require("../lib/prisma");
 class WalletService {
     /**
      * Deducts wallet balance for a user.

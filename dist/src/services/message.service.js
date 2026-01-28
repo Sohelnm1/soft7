@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
-const prisma_1 = require("@/lib/prisma");
-const socket_1 = require("@/lib/socket");
+const prisma_1 = require("../lib/prisma");
+const socket_1 = require("../lib/socket");
 const wallet_service_1 = require("./wallet.service");
 class MessageService {
     /**
