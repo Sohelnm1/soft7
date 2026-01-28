@@ -1,6 +1,6 @@
 import { Worker, Job } from "bullmq";
 import IORedis from "ioredis";
-import { prisma } from "../lib/prisma";
+const { prisma } = require("../lib/prisma.worker.cjs");
 import { MessageService } from "../services/message.service";
 
 const connection = new IORedis(process.env.REDIS_URL || "redis://localhost:6379", {

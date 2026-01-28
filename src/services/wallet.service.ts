@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+const { prisma } = require("../lib/prisma.worker.cjs");
 
 export class WalletService {
     /**
