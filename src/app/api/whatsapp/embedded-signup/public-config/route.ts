@@ -24,12 +24,14 @@ async function getCurrentUserId(): Promise<number | null> {
  */
 export async function GET(req: NextRequest) {
   try {
+    // Prefer appId from an existing active account; fall back to env for new setups
     const account = await prisma.whatsAppAccount.findFirst({
       where: { isActive: true },
       orderBy: { createdAt: "desc" },
     });
+    const appId = account?.appId ?? process.env.META_APP_ID;
 
-    if (!account || !account.appId) {
+    if (!appId) {
       return NextResponse.json(
         { error: "App configuration not found" },
         { status: 404 },
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
       : undefined;
 
     return NextResponse.json({
-      appId: account.appId,
+      appId,
       redirectUri,
       state: state ?? undefined,
     });

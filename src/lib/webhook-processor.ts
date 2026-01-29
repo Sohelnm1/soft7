@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
 
+function normalizePhone(phone: string): string {
+  if (!phone) return phone;
+  return phone.replace(/\D/g, "");
+}
+
 export async function processWebhookQueue(batchSize: number = 500) {
   const webhooks = await prisma.incomingWebhook.findMany({
     where: { status: "PENDING" },
@@ -174,13 +179,18 @@ async function handleInboundMessage({ message, contactMeta, metadata }: any) {
     });
   }
 
-  // Conversation – upsert by (userId, contactId) to avoid unique constraint on (userId, contactId)
+  // Conversation – upsert by (userId, phone) using normalized phone to avoid duplicates (e.g. 91766... vs +91766...)
+  const phoneKey = normalizePhone(contact.phone ?? from);
   const conversation = await prisma.conversation.upsert({
-    where: { userId_contactId: { userId, contactId: contact.id } },
-    update: { lastInboundAt: new Date(), phone: from },
+    where: { userId_phone: { userId, phone: phoneKey } },
+    update: {
+      lastInboundAt: new Date(),
+      contactId: contact.id,
+      name: name ?? undefined,
+    },
     create: {
       userId,
-      phone: from,
+      phone: phoneKey,
       name,
       contactId: contact.id,
       lastInboundAt: new Date(),
