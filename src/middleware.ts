@@ -51,8 +51,9 @@ export async function middleware(request: NextRequest) {
       await jwtVerify(token, JWT_SECRET);
       console.log(" JWT is valid");
 
-      // If already logged in and trying to access /auth, redirect to dashboard
-      if (isPublicRoute) {
+      // If already logged in and trying to access /auth (login page), redirect to dashboard
+      // Don't redirect /signup – logged-in users can use embedded signup to add accounts
+      if (pathname.startsWith("/auth")) {
         console.log(" Already authenticated, redirecting to /dashboard");
         const url = request.nextUrl.clone();
         url.pathname = "/dashboard";
