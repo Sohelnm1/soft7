@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { fetchWabaAndPhoneFromToken } from "@/lib/whatsapp-meta";
 
 /** Build app base URL for redirects – use env or forwarded headers so live never redirects to localhost */
 function getBaseUrl(req: NextRequest): string {
@@ -116,39 +117,66 @@ export async function GET(req: NextRequest) {
 
     const accessToken = tokenData.access_token;
 
-    // Get phone number details if phoneNumberId is provided
-    let phoneNumber = null;
-    if (phoneNumberId) {
+    // Meta's redirect often doesn't include waba_id/phone_number_id – fetch from Graph API if missing
+    let resolvedWabaId = wabaId;
+    let resolvedPhoneNumberId = phoneNumberId;
+    let phoneNumber: string | null = null;
+
+    if (!resolvedWabaId || !resolvedPhoneNumberId) {
+      const fromApi = await fetchWabaAndPhoneFromToken(accessToken);
+      if (fromApi) {
+        resolvedWabaId = resolvedWabaId || fromApi.wabaId;
+        resolvedPhoneNumberId = resolvedPhoneNumberId || fromApi.phoneNumberId;
+        phoneNumber = fromApi.phoneNumber || phoneNumber;
+      }
+    }
+
+    // Get phone display number if we have phoneNumberId
+    if (resolvedPhoneNumberId && !phoneNumber) {
       try {
         const phoneResponse = await fetch(
-          `https://graph.facebook.com/v22.0/${phoneNumberId}?access_token=${accessToken}`,
+          `https://graph.facebook.com/v22.0/${resolvedPhoneNumberId}?access_token=${encodeURIComponent(accessToken)}`,
           { method: "GET" },
         );
         const phoneData = await phoneResponse.json();
-        phoneNumber = phoneData.display_phone_number || phoneData.verified_name;
+        phoneNumber =
+          phoneData.display_phone_number || phoneData.verified_name || null;
       } catch (error) {
         console.error("Failed to fetch phone number:", error);
       }
     }
 
-    // Create or update WhatsApp account
+    // Require real Meta IDs – never save placeholder "embedded_*" so Test Connection works
+    if (!resolvedWabaId || !resolvedPhoneNumberId) {
+      console.error(
+        "Could not resolve WABA ID or Phone Number ID from URL or Graph API",
+      );
+      return NextResponse.redirect(
+        new URL(
+          "/integrations/whatsapp/embedded-signup?error=waba_phone_not_found",
+          baseUrl,
+        ),
+      );
+    }
+
+    // Create or update WhatsApp account with real Meta IDs
     const account = await prisma.whatsAppAccount.upsert({
       where: {
         userId_phoneNumberId: {
           userId,
-          phoneNumberId: phoneNumberId || `embedded_${Date.now()}`,
+          phoneNumberId: resolvedPhoneNumberId,
         },
       },
       update: {
         accessToken,
-        wabaId: wabaId || undefined,
+        wabaId: resolvedWabaId,
         phoneNumber: phoneNumber || undefined,
         isActive: true,
       },
       create: {
         userId,
-        wabaId: wabaId || `embedded_${Date.now()}`,
-        phoneNumberId: phoneNumberId || `embedded_${Date.now()}`,
+        wabaId: resolvedWabaId,
+        phoneNumberId: resolvedPhoneNumberId,
         accessToken,
         phoneNumber: phoneNumber || undefined,
         apiVersion: "v22.0",

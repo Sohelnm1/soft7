@@ -46,7 +46,9 @@ export default function EmbeddedSignupPage() {
             ? "Signup was incomplete. Please try again from the signup page and complete the full flow."
             : err === "cancelled"
               ? "You cancelled the signup. You can try again when ready."
-              : `Error: ${err}`;
+              : err === "waba_phone_not_found"
+                ? "We couldn't load your WhatsApp Business account details from Meta. Please ensure your app has the correct permissions and try again, or complete signup from a domain allowed in Meta's App Dashboard."
+                : `Error: ${err}`;
         toast.error(message);
       }
     }
