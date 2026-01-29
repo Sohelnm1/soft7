@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+/** Build app base URL for redirects – use env or forwarded headers so live never redirects to localhost */
+function getBaseUrl(req: NextRequest): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  }
+  const proto = req.headers.get("x-forwarded-proto") || "https";
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  if (host) return `${proto}://${host}`;
+  return "http://localhost:3000";
+}
+
 /**
  * Callback endpoint for WhatsApp Embedded Signup
  * This is called by Meta after a customer completes the signup flow
  */
 export async function GET(req: NextRequest) {
+  const baseUrl = getBaseUrl(req);
+
   try {
     const searchParams = req.nextUrl.searchParams;
     const code = searchParams.get("code");
@@ -17,7 +30,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/integrations/whatsapp/embedded-signup?error=missing_params",
-          req.url,
+          baseUrl,
         ),
       );
     }
@@ -59,16 +72,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/integrations/whatsapp/embedded-signup?error=config_missing",
-          req.url,
+          baseUrl,
         ),
       );
     }
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (req.headers.get("x-forwarded-proto") && req.headers.get("host")
-        ? `${req.headers.get("x-forwarded-proto")}://${req.headers.get("host")}`
-        : "http://localhost:3000");
     const redirectUri = `${baseUrl}/api/whatsapp/embedded-signup/callback`;
 
     // Exchange authorization code for access token
@@ -88,7 +96,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(
         new URL(
           `/integrations/whatsapp/embedded-signup?error=${encodeURIComponent(tokenData.error?.message || "token_exchange_failed")}`,
-          req.url,
+          baseUrl,
         ),
       );
     }
@@ -161,13 +169,13 @@ export async function GET(req: NextRequest) {
     // Redirect: back to Manage WhatsApp so user sees the new account
     const successUrl = `/integrations/whatsapp?success=true&account_id=${account.id}`;
 
-    return NextResponse.redirect(new URL(successUrl, req.url));
+    return NextResponse.redirect(new URL(successUrl, baseUrl));
   } catch (error: any) {
     console.error("Embedded Signup Callback Error:", error);
     return NextResponse.redirect(
       new URL(
         `/integrations/whatsapp/embedded-signup?error=${encodeURIComponent(error.message)}`,
-        req.url,
+        baseUrl,
       ),
     );
   }
