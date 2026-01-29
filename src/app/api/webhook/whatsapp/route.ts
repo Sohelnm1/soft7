@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       return new NextResponse(challenge, { status: 200 });
     }
     const account = await prisma.whatsAppAccount.findFirst({
-      where: { verifyToken: token }
+      where: { verifyToken: token },
     });
     if (account) {
       return new NextResponse(challenge, { status: 200 });
@@ -34,19 +34,35 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // 1️⃣ Fast Ingest: Extract Meta ID for Queue Idempotency
+    // Check if this is an embedded signup related event (handle immediately, don't queue)
     const entry = body.entry?.[0];
     const change = entry?.changes?.[0];
+    const field = change?.field;
     const value = change?.value;
 
-    const metaId = value?.messages?.[0]?.id || value?.statuses?.[0]?.id || `wh_${Date.now()}`;
+    // Meta sends embedded signup completion as account_update with event PARTNER_ADDED
+    // (There is no "embedded_signup" webhook field in the dashboard - subscribe to account_update)
+    if (field === "embedded_signup") {
+      await handleEmbeddedSignupWebhook(value);
+      return NextResponse.json({ status: "accepted" });
+    }
+    if (field === "account_update" && value?.event === "PARTNER_ADDED") {
+      await handleAccountUpdatePartnerAdded(entry, value);
+      return NextResponse.json({ status: "accepted" });
+    }
+
+    // 1️⃣ Fast Ingest: Extract Meta ID for Queue Idempotency
+    const metaId =
+      value?.messages?.[0]?.id ||
+      value?.statuses?.[0]?.id ||
+      `wh_${Date.now()}`;
 
     // 2️⃣ Record raw payload to DB
     const log = await prisma.incomingWebhook.create({
       data: {
         payload: body,
-        status: "PENDING"
-      }
+        status: "PENDING",
+      },
     });
 
     // 3️⃣ Enqueue for async processing
@@ -55,10 +71,141 @@ export async function POST(req: NextRequest) {
 
     // 4️⃣ Return 200 OK Immediately (<100ms goal)
     return NextResponse.json({ status: "accepted", id: log.id });
-
   } catch (error: any) {
     console.error("WhatsApp Webhook Ingest Error:", error.message);
     // Return 200 to Meta to avoid retries if the payload was received but processing enqueued
-    return NextResponse.json({ status: "error", message: error.message }, { status: 200 });
+    return NextResponse.json(
+      { status: "error", message: error.message },
+      { status: 200 },
+    );
+  }
+}
+
+async function handleEmbeddedSignupWebhook(event: any) {
+  try {
+    console.log("Embedded Signup Webhook Event:", event);
+
+    // Event types: embedded_signup_completed, embedded_signup_failed
+    if (event.event === "embedded_signup_completed") {
+      const { waba_id, phone_number_id, access_token } = event;
+
+      if (!waba_id || !phone_number_id || !access_token) {
+        console.error("Missing required fields in signup event");
+        return;
+      }
+
+      // Get phone number details
+      let phoneNumber = null;
+      try {
+        const phoneResponse = await fetch(
+          `https://graph.facebook.com/v22.0/${phone_number_id}?access_token=${access_token}`,
+          { method: "GET" },
+        );
+        const phoneData = await phoneResponse.json();
+        phoneNumber = phoneData.display_phone_number || phoneData.verified_name;
+      } catch (error) {
+        console.error("Failed to fetch phone number:", error);
+      }
+
+      // For embedded signup, we need to find or create a user
+      // Option 1: Create a default user account for embedded signup customers
+      // Option 2: Map to an existing user based on email/phone if available
+      // For now, we'll create accounts under a default user or find by phone
+
+      const defaultUserId = Number(process.env.DEFAULT_USER_ID || 1);
+
+      // Try to find existing user by phone number if available
+      let userId = defaultUserId;
+      if (phoneNumber) {
+        const existingUser = await prisma.user.findFirst({
+          where: { phone: { contains: phoneNumber.replace(/\D/g, "") } },
+        });
+        if (existingUser) {
+          userId = existingUser.id;
+        }
+      }
+
+      // Create or update WhatsApp account
+      const account = await prisma.whatsAppAccount.upsert({
+        where: {
+          userId_phoneNumberId: {
+            userId,
+            phoneNumberId: phone_number_id,
+          },
+        },
+        update: {
+          accessToken: access_token,
+          wabaId: waba_id,
+          phoneNumber: phoneNumber || undefined,
+          isActive: true,
+        },
+        create: {
+          userId,
+          wabaId: waba_id,
+          phoneNumberId: phone_number_id,
+          accessToken: access_token,
+          phoneNumber: phoneNumber || undefined,
+          apiVersion: "v22.0",
+          isActive: true,
+        },
+      });
+
+      // Allocate initial credits
+      const INITIAL_CREDITS = parseFloat(
+        process.env.EMBEDDED_SIGNUP_INITIAL_CREDITS || "100",
+      );
+      if (INITIAL_CREDITS > 0) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            walletBalance: { increment: INITIAL_CREDITS },
+          },
+        });
+
+        // Record transaction
+        await prisma.walletTransaction.create({
+          data: {
+            userId,
+            amount: INITIAL_CREDITS,
+            type: "TOPUP",
+            messageId: `embedded_signup_webhook_${account.id}_${Date.now()}`,
+          },
+        });
+      }
+
+      console.log(
+        `✅ Successfully processed embedded signup for user ${userId}, account ${account.id}`,
+      );
+    }
+  } catch (error: any) {
+    console.error("Error handling embedded signup webhook:", error);
+  }
+}
+
+/** Meta sends embedded signup completion as account_update with event PARTNER_ADDED (no access_token in payload). */
+async function handleAccountUpdatePartnerAdded(entry: any, value: any) {
+  try {
+    const wabaId = value?.waba_info?.waba_id;
+    const ownerBusinessId = value?.waba_info?.owner_business_id;
+    if (!wabaId) return;
+    console.log("[Webhook] Embedded signup completed (PARTNER_ADDED):", {
+      wabaId,
+      ownerBusinessId,
+    });
+    // Account creation + token happens in OAuth callback; here we only log or update existing by waba_id
+    const existing = await prisma.whatsAppAccount.findFirst({
+      where: { wabaId },
+    });
+    if (existing) {
+      await prisma.whatsAppAccount.update({
+        where: { id: existing.id },
+        data: { isActive: true },
+      });
+      console.log(
+        `[Webhook] Updated existing account ${existing.id} for WABA ${wabaId}`,
+      );
+    }
+  } catch (error: any) {
+    console.error("Error handling account_update PARTNER_ADDED:", error);
   }
 }
