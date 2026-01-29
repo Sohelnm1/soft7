@@ -177,13 +177,17 @@ export class MessageService {
       });
     }
 
-    // Conversation – upsert by (userId, contactId) to avoid unique constraint on (userId, contactId)
+    // Conversation – upsert by (userId, phone) to avoid unique constraint on (userId, phone)
     const conversation = await prisma.conversation.upsert({
-      where: { userId_contactId: { userId, contactId: contact.id } },
-      update: { lastInboundAt: new Date(), phone: from },
+      where: { userId_phone: { userId, phone: contact.phone } },
+      update: {
+        lastInboundAt: new Date(),
+        contactId: contact.id,
+        name: name ?? undefined,
+      },
       create: {
         userId,
-        phone: from,
+        phone: contact.phone,
         name,
         contactId: contact.id,
         lastInboundAt: new Date(),
