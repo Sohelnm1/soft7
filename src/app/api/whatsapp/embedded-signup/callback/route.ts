@@ -23,10 +23,23 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const code = searchParams.get("code");
     const state = searchParams.get("state");
+    const metaError = searchParams.get("error");
     const wabaId = searchParams.get("waba_id");
     const phoneNumberId = searchParams.get("phone_number_id");
 
-    if (!code || !state) {
+    // User cancelled or Meta returned an error – show friendly message
+    if (metaError) {
+      const errorMsg = metaError === "access_denied" ? "cancelled" : metaError;
+      return NextResponse.redirect(
+        new URL(
+          `/integrations/whatsapp/embedded-signup?error=${encodeURIComponent(errorMsg)}`,
+          baseUrl,
+        ),
+      );
+    }
+
+    // Need at least code to proceed (state is optional – we use DEFAULT_USER_ID if missing)
+    if (!code) {
       return NextResponse.redirect(
         new URL(
           "/integrations/whatsapp/embedded-signup?error=missing_params",
