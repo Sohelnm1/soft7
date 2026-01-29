@@ -48,4 +48,4 @@ yarn-error.log*
 # Project specific
 logs/
 test-token.js
-schema.prisma_oldone
+schema.prisma_oldonedist/
