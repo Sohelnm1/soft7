@@ -41,15 +41,30 @@ export default function ManageWhatsAppPage() {
     fetchAccounts();
   }, []);
 
-  // Show success message when returning from embedded signup
+  // When returning from embedded signup: claim account for current user (if needed) and refetch list
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("success") === "true") {
+    const success = params.get("success") === "true";
+    const accountId = params.get("account_id");
+
+    if (success) {
       toast.success(
         "WhatsApp account connected successfully! Credits have been allocated.",
       );
-      // Clean URL without reload
+      // Claim account so it shows under current user (in case it was created with DEFAULT_USER_ID)
+      if (accountId) {
+        fetch("/api/whatsapp/accounts/claim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ accountId }),
+        })
+          .then(() => fetchAccounts())
+          .catch(() => fetchAccounts());
+      } else {
+        fetchAccounts();
+      }
       window.history.replaceState({}, "", "/integrations/whatsapp");
     }
   }, []);
