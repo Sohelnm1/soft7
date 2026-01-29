@@ -31,21 +31,36 @@ class MessageService {
             // 1. Find message and campaign
             const message = await tx.message.findUnique({
                 where: { whatsappMessageId: wamid },
-                select: { id: true, userId: true, campaignId: true, status: true }
+                select: { id: true, userId: true, campaignId: true, status: true, ...{ deliveredAt: true } }
             });
             if (!message) {
                 console.warn(`[MessageService] Message ${wamid} not found in database.`);
                 return null;
             }
-            // 2. Update Message Status
+            // 2. Map status to specific timestamp fields
+            const statusDate = timestamp ? new Date(parseInt(timestamp) * 1000) : new Date();
+            const updateData = {
+                status: status,
+                errorCode: errorCode?.toString(),
+                errorMessage: errorMessage,
+                updatedAt: new Date()
+            };
+            if (status === "sent")
+                updateData.sentAt = statusDate;
+            if (status === "delivered")
+                updateData.deliveredAt = statusDate;
+            if (status === "read") {
+                updateData.readAt = statusDate;
+                // If we get a read but don't have a deliveredAt, set it too
+                if (!message.deliveredAt) {
+                    updateData.deliveredAt = statusDate;
+                }
+            }
+            if (status === "failed")
+                updateData.failedAt = statusDate;
             const updatedMsg = await tx.message.update({
                 where: { id: message.id },
-                data: {
-                    status: status,
-                    errorCode: errorCode?.toString(),
-                    errorMessage: errorMessage,
-                    updatedAt: new Date()
-                }
+                data: updateData
             });
             // 3. Update Campaign Stats if applicable
             if (message.campaignId) {
@@ -158,10 +173,11 @@ class MessageService {
                 content: text,
                 mediaUrl,
                 mediaType,
-                caption, // Added
+                caption,
                 sentBy: "customer",
                 direction: "incoming",
                 status: "sent",
+                sentAt: message.timestamp ? new Date(parseInt(message.timestamp) * 1000) : new Date(),
                 whatsappMessageId: message.id,
                 type: message.type
             }
