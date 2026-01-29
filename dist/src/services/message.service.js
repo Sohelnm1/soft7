@@ -31,21 +31,44 @@ class MessageService {
             // 1. Find message and campaign
             const message = await tx.message.findUnique({
                 where: { whatsappMessageId: wamid },
-                select: { id: true, userId: true, campaignId: true, status: true }
+                select: {
+                    id: true,
+                    userId: true,
+                    campaignId: true,
+                    status: true,
+                    ...{ deliveredAt: true },
+                },
             });
             if (!message) {
                 console.warn(`[MessageService] Message ${wamid} not found in database.`);
                 return null;
             }
-            // 2. Update Message Status
+            // 2. Map status to specific timestamp fields
+            const statusDate = timestamp
+                ? new Date(parseInt(timestamp) * 1000)
+                : new Date();
+            const updateData = {
+                status: status,
+                errorCode: errorCode?.toString(),
+                errorMessage: errorMessage,
+                updatedAt: new Date(),
+            };
+            if (status === "sent")
+                updateData.sentAt = statusDate;
+            if (status === "delivered")
+                updateData.deliveredAt = statusDate;
+            if (status === "read") {
+                updateData.readAt = statusDate;
+                // If we get a read but don't have a deliveredAt, set it too
+                if (!message.deliveredAt) {
+                    updateData.deliveredAt = statusDate;
+                }
+            }
+            if (status === "failed")
+                updateData.failedAt = statusDate;
             const updatedMsg = await tx.message.update({
                 where: { id: message.id },
-                data: {
-                    status: status,
-                    errorCode: errorCode?.toString(),
-                    errorMessage: errorMessage,
-                    updatedAt: new Date()
-                }
+                data: updateData,
             });
             // 3. Update Campaign Stats if applicable
             if (message.campaignId) {
@@ -56,7 +79,7 @@ class MessageService {
                 }
                 else if (status === "read") {
                     updateData.readCount = { increment: 1 };
-                    // Check if previous status was NOT delivered/read to avoid double counting 
+                    // Check if previous status was NOT delivered/read to avoid double counting
                     // or missing delivery count if they arrive out of order
                     if (message.status !== "delivered" && message.status !== "read") {
                         updateData.deliveredCount = { increment: 1 };
@@ -68,7 +91,7 @@ class MessageService {
                 if (Object.keys(updateData).length > 0) {
                     await tx.campaign.update({
                         where: { id: message.campaignId },
-                        data: updateData
+                        data: updateData,
                     });
                 }
             }
@@ -112,7 +135,10 @@ class MessageService {
             text = message.button?.text || "";
         }
         else if (message.type === "interactive") {
-            text = message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || "Interactive Response";
+            text =
+                message.interactive?.button_reply?.title ||
+                    message.interactive?.list_reply?.title ||
+                    "Interactive Response";
         }
         else if (["image", "video", "audio", "document"].includes(message.type)) {
             const media = message[message.type];
@@ -122,7 +148,7 @@ class MessageService {
             text = caption || `Sent a ${message.type}`;
         }
         const waAccount = await prisma.whatsAppAccount.findFirst({
-            where: { phoneNumberId }
+            where: { phoneNumberId },
         });
         if (!waAccount)
             return;
@@ -131,23 +157,56 @@ class MessageService {
         let contact = await prisma.contact.findFirst({
             where: {
                 userId,
-                OR: [
-                    { phone: from },
-                    { phone: `+${from}` }
-                ]
-            }
+                OR: [{ phone: from }, { phone: `+${from}` }],
+            },
         });
         if (!contact) {
             contact = await prisma.contact.create({
-                data: { userId, phone: from, name }
+                data: { userId, phone: from, name },
             });
         }
-        // Conversation
-        const conversation = await prisma.conversation.upsert({
-            where: { userId_phone: { userId, phone: from } },
-            update: { lastInboundAt: new Date() },
-            create: { userId, phone: from, name, contactId: contact.id, lastInboundAt: new Date() }
-        });
+        // Conversation – upsert by (userId, phone) using normalized phone to avoid duplicates (e.g. 91766... vs +91766...)
+        const phoneKey = normalizePhone(contact.phone || from);
+        let conversation;
+        try {
+            conversation = await prisma.conversation.upsert({
+                where: { userId_phone: { userId, phone: phoneKey } },
+                update: {
+                    lastInboundAt: new Date(),
+                    contactId: contact.id,
+                    name: name ?? undefined,
+                },
+                create: {
+                    userId,
+                    phone: phoneKey,
+                    name,
+                    contactId: contact.id,
+                    lastInboundAt: new Date(),
+                },
+            });
+        }
+        catch (err) {
+            // Race: another job created (userId, phone) between our lookup and create; use existing row
+            if (err?.code === "P2002") {
+                const existing = await prisma.conversation.findUnique({
+                    where: { userId_phone: { userId, phone: phoneKey } },
+                });
+                if (existing) {
+                    conversation = await prisma.conversation.update({
+                        where: { id: existing.id },
+                        data: {
+                            lastInboundAt: new Date(),
+                            contactId: contact.id,
+                            name: name ?? undefined,
+                        },
+                    });
+                }
+                else
+                    throw err;
+            }
+            else
+                throw err;
+        }
         // Save Message
         const savedMsg = await prisma.message.create({
             data: {
@@ -158,13 +217,16 @@ class MessageService {
                 content: text,
                 mediaUrl,
                 mediaType,
-                caption, // Added
+                caption,
                 sentBy: "customer",
                 direction: "incoming",
                 status: "sent",
+                sentAt: message.timestamp
+                    ? new Date(parseInt(message.timestamp) * 1000)
+                    : new Date(),
                 whatsappMessageId: message.id,
-                type: message.type
-            }
+                type: message.type,
+            },
         });
         const io = getSocketIO?.();
         if (io) {
