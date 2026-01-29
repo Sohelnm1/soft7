@@ -1,8 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Copy, Plus, Eye, MoreHorizontal, Trash2, X, Check, Loader2, Settings } from "lucide-react";
+import {
+  Copy,
+  Plus,
+  Eye,
+  MoreHorizontal,
+  Trash2,
+  X,
+  Check,
+  Loader2,
+  Settings,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "react-hot-toast";
+import Link from "next/link";
 
 type WhatsAppAccount = {
   id: number;
@@ -21,11 +33,25 @@ export default function ManageWhatsAppPage() {
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Partial<WhatsAppAccount> | null>(null);
+  const [editingAccount, setEditingAccount] =
+    useState<Partial<WhatsAppAccount> | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
+  }, []);
+
+  // Show success message when returning from embedded signup
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("success") === "true") {
+      toast.success(
+        "WhatsApp account connected successfully! Credits have been allocated.",
+      );
+      // Clean URL without reload
+      window.history.replaceState({}, "", "/integrations/whatsapp");
+    }
   }, []);
 
   const fetchAccounts = async () => {
@@ -71,10 +97,12 @@ export default function ManageWhatsAppPage() {
   };
 
   const openEdit = (account: WhatsAppAccount | null = null) => {
-    setEditingAccount(account || {
-      apiVersion: "v22.0",
-      isActive: true,
-    });
+    setEditingAccount(
+      account || {
+        apiVersion: "v22.0",
+        isActive: true,
+      },
+    );
     setIsModalOpen(true);
   };
 
@@ -82,18 +110,36 @@ export default function ManageWhatsAppPage() {
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-gray-50/50">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Manage WhatsApp</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Manage WhatsApp
+          </h1>
           <p className="text-gray-500 mt-2 text-lg">
             Configure your Meta Business credentials and API settings
           </p>
         </div>
-        <button
-          onClick={() => openEdit()}
-          className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all duration-200"
-        >
-          <Plus size={20} />
-          Add Account
-        </button>
+        <div className="flex gap-3">
+          <Link
+            href="/signup/whatsapp"
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <ExternalLink size={20} />
+            Embedded Signup
+          </Link>
+          <Link
+            href="/integrations/whatsapp/embedded-signup"
+            className="flex items-center gap-2 bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200 border border-gray-200"
+          >
+            <Settings size={18} />
+            Embedded Signup Setup
+          </Link>
+          <button
+            onClick={() => openEdit()}
+            className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <Plus size={20} />
+            Add Account
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -106,9 +152,12 @@ export default function ManageWhatsAppPage() {
           <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
             <Plus className="w-10 h-10 text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No WhatsApp Accounts</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            No WhatsApp Accounts
+          </h3>
           <p className="text-gray-500 max-w-md mx-auto mb-8">
-            You haven't added any WhatsApp Business accounts yet. Connect your first account to start sending messages.
+            You haven't added any WhatsApp Business accounts yet. Connect your
+            first account to start sending messages.
           </p>
           <button
             onClick={() => openEdit()}
@@ -122,23 +171,38 @@ export default function ManageWhatsAppPage() {
           <table className="min-w-full divide-y divide-gray-100">
             <thead>
               <tr className="bg-gray-50/50">
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Phone Number</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Credentials</th>
-                <th className="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Phone Number
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Credentials
+                </th>
+                <th className="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {accounts.map((account) => (
-                <tr key={account.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr
+                  key={account.id}
+                  className="hover:bg-gray-50/50 transition-colors group"
+                >
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold">
                         WA
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-gray-900">{account.phoneNumber}</div>
-                        <div className="text-xs text-gray-400">ID: {account.phoneNumberId}</div>
+                        <div className="text-sm font-bold text-gray-900">
+                          {account.phoneNumber}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          ID: {account.phoneNumberId}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -153,9 +217,14 @@ export default function ManageWhatsAppPage() {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${account.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'
-                      }`}>
-                      {account.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                        account.isActive
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      {account.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td className="px-6 py-5 text-right">
@@ -177,18 +246,24 @@ export default function ManageWhatsAppPage() {
                     <div className="flex justify-end mt-2">
                       <button
                         onClick={async () => {
-                          const toastId = toast.loading("Testing connection...");
+                          const toastId = toast.loading(
+                            "Testing connection...",
+                          );
                           try {
                             const res = await fetch("/api/whatsapp/test", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ accountId: account.id })
+                              body: JSON.stringify({ accountId: account.id }),
                             });
                             const data = await res.json();
                             if (res.ok) {
-                              toast.success("Connection Successful!", { id: toastId });
+                              toast.success("Connection Successful!", {
+                                id: toastId,
+                              });
                             } else {
-                              toast.error("Connection Failed: " + data.error, { id: toastId });
+                              toast.error("Connection Failed: " + data.error, {
+                                id: toastId,
+                              });
                             }
                           } catch (e) {
                             toast.error("Test Error", { id: toastId });
@@ -210,15 +285,22 @@ export default function ManageWhatsAppPage() {
       {/* Modern Modal Overlay */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+          <div
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+          />
 
           <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {editingAccount?.id ? 'Edit WhatsApp Config' : 'Connect New Account'}
+                  {editingAccount?.id
+                    ? "Edit WhatsApp Config"
+                    : "Connect New Account"}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">Enter your Meta Graph API credentials</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Enter your Meta Graph API credentials
+                </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -231,73 +313,122 @@ export default function ManageWhatsAppPage() {
             <form onSubmit={handleSave} className="p-8">
               <div className="grid grid-cols-2 gap-6 mb-8">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Phone Number</label>
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    Phone Number
+                  </label>
                   <input
                     required
                     placeholder="+91 99999 99999"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all text-gray-900"
                     value={editingAccount?.phoneNumber || ""}
-                    onChange={e => setEditingAccount({ ...editingAccount!, phoneNumber: e.target.value })}
+                    onChange={(e) =>
+                      setEditingAccount({
+                        ...editingAccount!,
+                        phoneNumber: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Phone Number ID</label>
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    Phone Number ID
+                  </label>
                   <input
                     required
                     placeholder="From Meta Dashboard"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all text-gray-900"
                     value={editingAccount?.phoneNumberId || ""}
-                    onChange={e => setEditingAccount({ ...editingAccount!, phoneNumberId: e.target.value })}
+                    onChange={(e) =>
+                      setEditingAccount({
+                        ...editingAccount!,
+                        phoneNumberId: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">WABA ID</label>
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    WABA ID
+                  </label>
                   <input
                     required
                     placeholder="WhatsApp Business Account ID"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all text-gray-900"
                     value={editingAccount?.wabaId || ""}
-                    onChange={e => setEditingAccount({ ...editingAccount!, wabaId: e.target.value })}
+                    onChange={(e) =>
+                      setEditingAccount({
+                        ...editingAccount!,
+                        wabaId: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Verify Token (Custom)</label>
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    Verify Token (Custom)
+                  </label>
                   <input
                     placeholder="Any secret string"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all text-gray-900"
                     value={editingAccount?.verifyToken || ""}
-                    onChange={e => setEditingAccount({ ...editingAccount!, verifyToken: e.target.value })}
+                    onChange={(e) =>
+                      setEditingAccount({
+                        ...editingAccount!,
+                        verifyToken: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">System User Access Token</label>
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    System User Access Token
+                  </label>
                   <textarea
                     required
                     rows={3}
                     placeholder="EAAG..."
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all text-gray-900 font-mono text-sm"
                     value={editingAccount?.accessToken || ""}
-                    onChange={e => setEditingAccount({ ...editingAccount!, accessToken: e.target.value })}
+                    onChange={(e) =>
+                      setEditingAccount({
+                        ...editingAccount!,
+                        accessToken: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">App ID (Optional)</label>
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    App ID (Optional)
+                  </label>
                   <input
                     placeholder="Meta App ID"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all text-gray-900"
                     value={editingAccount?.appId || ""}
-                    onChange={e => setEditingAccount({ ...editingAccount!, appId: e.target.value })}
+                    onChange={(e) =>
+                      setEditingAccount({
+                        ...editingAccount!,
+                        appId: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">App Secret (Optional)</label>
+                  <label className="text-sm font-bold text-gray-700 ml-1">
+                    App Secret (Optional)
+                  </label>
                   <input
                     type="password"
                     placeholder="Meta App Secret"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all text-gray-900"
                     value={editingAccount?.appSecret || ""}
-                    onChange={e => setEditingAccount({ ...editingAccount!, appSecret: e.target.value })}
+                    onChange={(e) =>
+                      setEditingAccount({
+                        ...editingAccount!,
+                        appSecret: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -315,8 +446,12 @@ export default function ManageWhatsAppPage() {
                   type="submit"
                   className="px-8 py-3 rounded-xl font-bold bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-xl shadow-gray-200"
                 >
-                  {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check size={20} />}
-                  {editingAccount?.id ? 'Update Settings' : 'Connect Account'}
+                  {saving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Check size={20} />
+                  )}
+                  {editingAccount?.id ? "Update Settings" : "Connect Account"}
                 </button>
               </div>
             </form>
