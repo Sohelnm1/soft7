@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Loader2, ExternalLink, Copy, AlertCircle, Info, Settings } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  ExternalLink,
+  Copy,
+  AlertCircle,
+  Info,
+  Settings,
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 
 type EmbeddedSignupConfig = {
@@ -21,14 +29,25 @@ export default function EmbeddedSignupPage() {
     fetchConfig();
     // Set webhook URL based on current origin
     if (typeof window !== "undefined") {
-      setWebhookUrl(`${window.location.origin}/api/whatsapp/embedded-signup/webhook`);
-      
+      setWebhookUrl(
+        `${window.location.origin}/api/whatsapp/embedded-signup/webhook`,
+      );
+
       // Check for success/error in URL params
       const params = new URLSearchParams(window.location.search);
       if (params.get("success") === "true") {
-        toast.success("Embedded Signup completed successfully! Credits have been allocated.");
+        toast.success(
+          "Embedded Signup completed successfully! Credits have been allocated.",
+        );
       } else if (params.get("error")) {
-        toast.error(`Error: ${params.get("error")}`);
+        const err = params.get("error") || "";
+        const message =
+          err === "missing_params"
+            ? "Signup was incomplete. Please try again from the signup page and complete the full flow."
+            : err === "cancelled"
+              ? "You cancelled the signup. You can try again when ready."
+              : `Error: ${err}`;
+        toast.error(message);
       }
     }
   }, []);
@@ -88,7 +107,8 @@ export default function EmbeddedSignupPage() {
           WhatsApp Embedded Signup Builder
         </h1>
         <p className="text-gray-500 mt-2 text-lg">
-          Allow customers to onboard to WhatsApp Business Platform directly from your website
+          Allow customers to onboard to WhatsApp Business Platform directly from
+          your website
         </p>
       </div>
 
@@ -133,9 +153,10 @@ export default function EmbeddedSignupPage() {
               Getting Started with WhatsApp Embedded Signup
             </h2>
             <p className="text-gray-600">
-              Embedded Signup allows you to onboard customers to the WhatsApp Business Platform
-              directly from your website. This includes necessary app setup operations and code
-              examples you can copy and paste into your system.
+              Embedded Signup allows you to onboard customers to the WhatsApp
+              Business Platform directly from your website. This includes
+              necessary app setup operations and code examples you can copy and
+              paste into your system.
             </p>
           </div>
         </div>
@@ -149,8 +170,9 @@ export default function EmbeddedSignupPage() {
                   Initialize Embedded Signup
                 </h3>
                 <p className="text-sm text-emerald-800 mb-4">
-                  To get started, you need to initialize the Embedded Signup configuration.
-                  This will set up the necessary parameters for the signup flow.
+                  To get started, you need to initialize the Embedded Signup
+                  configuration. This will set up the necessary parameters for
+                  the signup flow.
                 </p>
                 <button
                   onClick={initializeSignup}
@@ -176,7 +198,9 @@ export default function EmbeddedSignupPage() {
           <div className="space-y-6">
             {/* Configuration Details */}
             <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="font-bold text-gray-900 mb-4">Configuration Details</h3>
+              <h3 className="font-bold text-gray-900 mb-4">
+                Configuration Details
+              </h3>
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
@@ -240,7 +264,8 @@ export default function EmbeddedSignupPage() {
                     Webhook Configuration Required
                   </h3>
                   <p className="text-sm text-blue-800 mb-4">
-                    Add this webhook URL to your Meta App settings to receive signup notifications:
+                    Add this webhook URL to your Meta App settings to receive
+                    signup notifications:
                   </p>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 bg-white px-4 py-2 rounded-lg border border-blue-200 text-sm font-mono">
@@ -254,7 +279,8 @@ export default function EmbeddedSignupPage() {
                     </button>
                   </div>
                   <p className="text-xs text-blue-700 mt-3">
-                    Go to Meta for Developers → Your App → WhatsApp → Configuration → Webhook
+                    Go to Meta for Developers → Your App → WhatsApp →
+                    Configuration → Webhook
                   </p>
                 </div>
               </div>
@@ -262,20 +288,30 @@ export default function EmbeddedSignupPage() {
 
             {/* Integration Code */}
             <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="font-bold text-gray-900 mb-4">Integration Options</h3>
-              
+              <h3 className="font-bold text-gray-900 mb-4">
+                Integration Options
+              </h3>
+
               {/* Option 1: Direct Link */}
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-800 mb-2">Option 1: Direct Signup Page</h4>
+                <h4 className="font-semibold text-gray-800 mb-2">
+                  Option 1: Direct Signup Page
+                </h4>
                 <p className="text-sm text-gray-600 mb-3">
                   Link to our hosted signup page:
                 </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-white px-4 py-2 rounded-lg border border-gray-200 text-sm font-mono">
-                    {typeof window !== "undefined" ? `${window.location.origin}/signup/whatsapp` : "/signup/whatsapp"}
+                    {typeof window !== "undefined"
+                      ? `${window.location.origin}/signup/whatsapp`
+                      : "/signup/whatsapp"}
                   </code>
                   <button
-                    onClick={() => copyToClipboard(`${typeof window !== "undefined" ? window.location.origin : ""}/signup/whatsapp`)}
+                    onClick={() =>
+                      copyToClipboard(
+                        `${typeof window !== "undefined" ? window.location.origin : ""}/signup/whatsapp`,
+                      )
+                    }
                     className="p-2 hover:bg-gray-100 rounded-lg transition"
                   >
                     <Copy className="w-4 h-4 text-gray-600" />
@@ -285,7 +321,9 @@ export default function EmbeddedSignupPage() {
 
               {/* Option 2: Embed Code */}
               <div>
-                <h4 className="font-semibold text-gray-800 mb-2">Option 2: Embed Widget on Your Website</h4>
+                <h4 className="font-semibold text-gray-800 mb-2">
+                  Option 2: Embed Widget on Your Website
+                </h4>
                 <p className="text-sm text-gray-600 mb-4">
                   Add this code to your website to enable Embedded Signup:
                 </p>
@@ -359,7 +397,8 @@ export default function EmbeddedSignupPage() {
                     Need More Help?
                   </h3>
                   <p className="text-sm text-gray-600">
-                    Check out the official Meta documentation for detailed integration instructions
+                    Check out the official Meta documentation for detailed
+                    integration instructions
                   </p>
                 </div>
                 <a
