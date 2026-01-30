@@ -81,7 +81,12 @@ export default function WhatsAppSignupPage() {
     })(document, "script", "facebook-jssdk");
   }, []);
 
+  // Store WABA and phone IDs from session info
+  const [wabaId, setWabaId] = useState<string | null>(null);
+  const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
+
   // Listen for messages from Facebook popup (Session Info)
+  // IMPORTANT: This is where we get the WABA ID and phone number ID!
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== "https://www.facebook.com" && event.origin !== "https://web.facebook.com") {
@@ -96,7 +101,9 @@ export default function WhatsAppSignupPage() {
           if (data.event === "FINISH") {
             const { phone_number_id, waba_id } = data.data;
             console.log("✅ Embedded Signup FINISH:", { phone_number_id, waba_id });
-            // Note: The actual account creation happens on the backend via webhook + callback
+            // Store these IDs to pass to callback
+            if (waba_id) setWabaId(waba_id);
+            if (phone_number_id) setPhoneNumberId(phone_number_id);
           } else if (data.event === "CANCEL") {
             console.warn("Embedded Signup cancelled at step:", data.data.current_step);
             setError("Signup was cancelled. Please try again.");
@@ -125,20 +132,34 @@ export default function WhatsAppSignupPage() {
       console.log("Authorization code received, redirecting to callback...");
       setIsProcessing(true);
 
-      // Send the code to our backend to exchange for access token
-      // MUST use absolute production URL to ensure redirect_uri matches Meta's configuration
-      const productionBaseUrl = "https://soft7.wapsuite.in";
-      const callbackUrl = `${productionBaseUrl}/api/whatsapp/embedded-signup/callback?code=${encodeURIComponent(code)}${stateToken ? `&state=${encodeURIComponent(stateToken)}` : ""}`;
+      // Small delay to allow session info message to be processed
+      setTimeout(() => {
+        // Send the code to our backend to exchange for access token
+        // MUST use absolute production URL to ensure redirect_uri matches Meta's configuration
+        const productionBaseUrl = "https://soft7.wapsuite.in";
 
-      // Redirect to callback endpoint to complete the signup
-      window.location.href = callbackUrl;
+        // Build callback URL with all available parameters
+        const params = new URLSearchParams();
+        params.set("code", code);
+        if (stateToken) params.set("state", stateToken);
+        // Include WABA and phone IDs from session info (if available)
+        // These come from the WA_EMBEDDED_SIGNUP message event
+        if (wabaId) params.set("waba_id", wabaId);
+        if (phoneNumberId) params.set("phone_number_id", phoneNumberId);
+
+        const callbackUrl = `${productionBaseUrl}/api/whatsapp/embedded-signup/callback?${params.toString()}`;
+        console.log("Redirecting to callback with params:", Object.fromEntries(params));
+
+        // Redirect to callback endpoint to complete the signup
+        window.location.href = callbackUrl;
+      }, 500); // Small delay to catch session info
     } else if (response.status === "unknown") {
       // User cancelled login
       console.log("User cancelled login");
     } else {
       console.log("FB.login did not return authResponse");
     }
-  }, [stateToken]);
+  }, [stateToken, wabaId, phoneNumberId]);
 
   // Launch WhatsApp Embedded Signup using FB.login
   const launchWhatsAppSignup = () => {
