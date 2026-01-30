@@ -332,6 +332,36 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // ============================================
+    // CRITICAL: Subscribe your app to webhooks on the customer's WABA
+    // Per Meta docs: This is REQUIRED to receive messages and statuses!
+    // https://developers.facebook.com/docs/whatsapp/embedded-signup
+    // ============================================
+    console.log("\n--- Subscribing to WABA Webhooks (REQUIRED per Meta docs) ---");
+    try {
+      const subscribeResponse = await fetch(
+        `https://graph.facebook.com/v22.0/${resolvedWabaId}/subscribed_apps`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const subscribeData = await subscribeResponse.json();
+      console.log("Webhook subscription response:", JSON.stringify(subscribeData, null, 2));
+
+      if (subscribeData.success) {
+        console.log(`✅ Successfully subscribed to webhooks for WABA ${resolvedWabaId}`);
+      } else if (subscribeData.error) {
+        console.error(`⚠️ Webhook subscription error:`, subscribeData.error);
+      }
+    } catch (subscribeError) {
+      console.error("Failed to subscribe to webhooks:", subscribeError);
+      // Don't fail the whole signup for this - can retry later
+    }
+
     // Redirect: back to Manage WhatsApp so user sees the new account
     const successUrl = `/integrations/whatsapp?success=true&account_id=${account.id}`;
 

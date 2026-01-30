@@ -439,6 +439,35 @@ export default function ManageWhatsAppPage() {
                       >
                         Test Connection
                       </button>
+                      <button
+                        onClick={async () => {
+                          const toastId = toast.loading(
+                            "Subscribing to webhooks...",
+                          );
+                          try {
+                            const res = await fetch("/api/whatsapp/subscribe-webhooks", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ accountId: account.id }),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              toast.success("Webhooks enabled! You'll now receive messages.", {
+                                id: toastId,
+                              });
+                            } else {
+                              toast.error("Failed: " + (data.error || "Unknown error"), {
+                                id: toastId,
+                              });
+                            }
+                          } catch (e) {
+                            toast.error("Error enabling webhooks", { id: toastId });
+                          }
+                        }}
+                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200 transition"
+                      >
+                        Enable Webhooks
+                      </button>
                     </div>
                   </td>
                 </tr>
