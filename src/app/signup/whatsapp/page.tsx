@@ -126,7 +126,9 @@ export default function WhatsAppSignupPage() {
       setIsProcessing(true);
 
       // Send the code to our backend to exchange for access token
-      const callbackUrl = `/api/whatsapp/embedded-signup/callback?code=${encodeURIComponent(code)}${stateToken ? `&state=${encodeURIComponent(stateToken)}` : ""}`;
+      // MUST use absolute production URL to ensure redirect_uri matches Meta's configuration
+      const productionBaseUrl = "https://soft7.wapsuite.in";
+      const callbackUrl = `${productionBaseUrl}/api/whatsapp/embedded-signup/callback?code=${encodeURIComponent(code)}${stateToken ? `&state=${encodeURIComponent(stateToken)}` : ""}`;
 
       // Redirect to callback endpoint to complete the signup
       window.location.href = callbackUrl;

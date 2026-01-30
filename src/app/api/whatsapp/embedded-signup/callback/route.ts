@@ -122,29 +122,47 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // For FB.login with Embedded Signup, the redirect_uri must match what's configured 
-    // in Meta's Embedded Signup Builder - use NEXT_PUBLIC_APP_URL (production URL)
-    // because even when testing locally, the code was issued for the production redirect_uri
-    const configuredRedirectUri = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/api/whatsapp/embedded-signup/callback`
-      : `${baseUrl}/api/whatsapp/embedded-signup/callback`;
-
-    console.log("Using redirect_uri:", configuredRedirectUri);
+    // For FB.login with Embedded Signup popup flow, the redirect_uri handling is different:
+    // - The popup returns the code directly to JavaScript (no redirect)
+    // - When exchanging the code, we should try without redirect_uri first
+    // - If that fails, try with the configured callback URL
 
     console.log("\n--- Token Exchange ---");
     console.log("Exchanging code for access token...");
+    console.log("Trying without redirect_uri first (popup flow)...");
 
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch(
+    // First try: Exchange without redirect_uri (popup flow doesn't use redirects)
+    let tokenResponse = await fetch(
       `https://graph.facebook.com/v22.0/oauth/access_token?` +
       `client_id=${META_APP_ID}&` +
       `client_secret=${META_APP_SECRET}&` +
-      `redirect_uri=${encodeURIComponent(configuredRedirectUri)}&` +
       `code=${code}`,
       { method: "GET" },
     );
 
-    const tokenData = await tokenResponse.json();
+    let tokenData = await tokenResponse.json();
+
+    // If first attempt fails with redirect_uri error, try with the configured URI
+    if (tokenData.error && tokenData.error.error_subcode === 36008) {
+      console.log("First attempt failed, trying with configured redirect_uri...");
+
+      const configuredRedirectUri = process.env.NEXT_PUBLIC_APP_URL
+        ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/api/whatsapp/embedded-signup/callback`
+        : `${baseUrl}/api/whatsapp/embedded-signup/callback`;
+
+      console.log("Using redirect_uri:", configuredRedirectUri);
+
+      tokenResponse = await fetch(
+        `https://graph.facebook.com/v22.0/oauth/access_token?` +
+        `client_id=${META_APP_ID}&` +
+        `client_secret=${META_APP_SECRET}&` +
+        `redirect_uri=${encodeURIComponent(configuredRedirectUri)}&` +
+        `code=${code}`,
+        { method: "GET" },
+      );
+
+      tokenData = await tokenResponse.json();
+    }
 
     console.log("Token exchange response status:", tokenResponse.status);
     console.log("Token data keys:", Object.keys(tokenData));
