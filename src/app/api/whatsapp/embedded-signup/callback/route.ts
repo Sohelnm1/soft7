@@ -228,24 +228,47 @@ export async function GET(req: NextRequest) {
     // create a PENDING account and start background resolution
     if (!resolvedWabaId || !resolvedPhoneNumberId) {
       console.log(
-        "WABA or Phone Number ID not immediately available, creating pending account...",
+        "WABA or Phone Number ID not immediately available, checking for existing pending account...",
       );
 
-      // Create pending account with accessToken (we can find it later)
-      const pendingAccount = await prisma.whatsAppAccount.create({
-        data: {
+      // Check if user already has a pending account (to avoid duplicates)
+      let pendingAccount = await prisma.whatsAppAccount.findFirst({
+        where: {
           userId,
-          accessToken,
-          wabaId: resolvedWabaId || null,
-          phoneNumberId: resolvedPhoneNumberId || null,
-          phoneNumber: phoneNumber || null,
-          apiVersion: "v22.0",
-          isActive: false,
           status: "PENDING_EMBEDDED_SIGNUP",
         },
+        orderBy: { createdAt: "desc" },
       });
 
-      console.log(`Created pending account ${pendingAccount.id} for user ${userId}`);
+      if (pendingAccount) {
+        // Update existing pending account with new token
+        console.log(`Found existing pending account ${pendingAccount.id}, updating...`);
+        pendingAccount = await prisma.whatsAppAccount.update({
+          where: { id: pendingAccount.id },
+          data: {
+            accessToken,
+            wabaId: resolvedWabaId || pendingAccount.wabaId,
+            phoneNumberId: resolvedPhoneNumberId || pendingAccount.phoneNumberId,
+            phoneNumber: phoneNumber || pendingAccount.phoneNumber,
+          },
+        });
+      } else {
+        // Create new pending account
+        console.log("No existing pending account, creating new one...");
+        pendingAccount = await prisma.whatsAppAccount.create({
+          data: {
+            userId,
+            accessToken,
+            wabaId: resolvedWabaId || null,
+            phoneNumberId: resolvedPhoneNumberId || null,
+            phoneNumber: phoneNumber || null,
+            apiVersion: "v22.0",
+            isActive: false,
+            status: "PENDING_EMBEDDED_SIGNUP",
+          },
+        });
+        console.log(`Created pending account ${pendingAccount.id} for user ${userId}`);
+      }
 
       // Start background resolution (non-blocking)
       startBackgroundResolution(pendingAccount.id, accessToken);
