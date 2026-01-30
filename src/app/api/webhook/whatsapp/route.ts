@@ -34,6 +34,60 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    // ============================================
+    // EMBEDDED SIGNUP WEBHOOK LOGGING
+    // Log all incoming webhook events to debug what Meta sends
+    // ============================================
+    console.log("=".repeat(80));
+    console.log("[WEBHOOK RECEIVED]", new Date().toISOString());
+    console.log("Object Type:", body.object);
+    console.log("Full Payload:", JSON.stringify(body, null, 2));
+
+    // Log each entry and change
+    if (body.entry && Array.isArray(body.entry)) {
+      body.entry.forEach((entry: any, entryIndex: number) => {
+        console.log(`\n--- Entry ${entryIndex} ---`);
+        console.log("Entry ID:", entry.id);
+
+        if (entry.changes && Array.isArray(entry.changes)) {
+          entry.changes.forEach((change: any, changeIndex: number) => {
+            console.log(`\n  [Change ${changeIndex}]`);
+            console.log("  Field:", change.field);
+            console.log("  Value:", JSON.stringify(change.value, null, 4));
+
+            // Specifically log embedded signup related fields
+            if (change.field === "embedded_signup") {
+              console.log("\n  🔔 EMBEDDED SIGNUP EVENT DETECTED!");
+              console.log("  Event Type:", change.value?.event);
+              console.log("  WABA ID:", change.value?.waba_id);
+              console.log("  Phone Number ID:", change.value?.phone_number_id);
+              console.log("  Access Token Present:", !!change.value?.access_token);
+            }
+
+            if (change.field === "account_update") {
+              console.log("\n  🔔 ACCOUNT UPDATE EVENT DETECTED!");
+              console.log("  Event:", change.value?.event);
+              console.log("  WABA Info:", JSON.stringify(change.value?.waba_info, null, 4));
+              console.log("  Phone Info:", JSON.stringify(change.value?.phone_info, null, 4));
+            }
+
+            if (change.field === "phone_number_quality_update") {
+              console.log("\n  📱 PHONE NUMBER QUALITY UPDATE DETECTED!");
+            }
+
+            if (change.field === "account_alerts") {
+              console.log("\n  ⚠️ ACCOUNT ALERTS DETECTED!");
+            }
+
+            if (change.field === "message_template_status_update") {
+              console.log("\n  📝 TEMPLATE STATUS UPDATE DETECTED!");
+            }
+          });
+        }
+      });
+    }
+    console.log("=".repeat(80));
+
     // Check if this is an embedded signup related event (handle immediately, don't queue)
     const entry = body.entry?.[0];
     const change = entry?.changes?.[0];

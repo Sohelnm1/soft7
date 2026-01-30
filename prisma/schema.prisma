@@ -506,8 +506,8 @@ model Subscription {
 model WhatsAppAccount {
   id            Int                @id @default(autoincrement())
   userId        Int
-  wabaId        String
-  phoneNumberId String
+  wabaId        String?
+  phoneNumberId String?
   accessToken   String
   verifyToken   String?
   phoneNumber   String?
@@ -515,6 +515,7 @@ model WhatsAppAccount {
   appSecret     String?
   apiVersion    String?            @default("v22.0")
   isActive      Boolean            @default(true)
+  status        String?            @default("ACTIVE") // PENDING_EMBEDDED_SIGNUP | ACTIVE | ERROR
   createdAt     DateTime           @default(now())
   User          User               @relation(fields: [userId], references: [id])
   templates     WhatsAppTemplate[]

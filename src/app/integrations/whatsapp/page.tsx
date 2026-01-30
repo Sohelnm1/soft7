@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Copy,
   Plus,
@@ -12,6 +12,8 @@ import {
   Loader2,
   Settings,
   ExternalLink,
+  Clock,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
@@ -27,6 +29,7 @@ type WhatsAppAccount = {
   appSecret?: string;
   apiVersion?: string;
   isActive: boolean;
+  status?: string; // PENDING_EMBEDDED_SIGNUP | ACTIVE | ERROR
 };
 
 export default function ManageWhatsAppPage() {
@@ -36,16 +39,56 @@ export default function ManageWhatsAppPage() {
   const [editingAccount, setEditingAccount] =
     useState<Partial<WhatsAppAccount> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(false);
+  const [pendingAccountId, setPendingAccountId] = useState<string | null>(null);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/whatsapp/config");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setAccounts(data);
+
+        // Check if any accounts are still pending
+        const hasPending = data.some(
+          (acc: WhatsAppAccount) => acc.status === "PENDING_EMBEDDED_SIGNUP"
+        );
+
+        // If pending account resolved, show success toast
+        if (pendingAccountId && !hasPending) {
+          const resolvedAccount = data.find(
+            (acc: WhatsAppAccount) => acc.id === Number(pendingAccountId)
+          );
+          if (resolvedAccount && resolvedAccount.status === "ACTIVE") {
+            toast.success("WhatsApp account setup completed!");
+            setPendingStatus(false);
+            setPendingAccountId(null);
+            window.history.replaceState({}, "", "/integrations/whatsapp");
+          }
+        }
+
+        return hasPending;
+      }
+      return false;
+    } catch (error) {
+      console.error("Failed to fetch accounts:", error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [pendingAccountId]);
 
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [fetchAccounts]);
 
-  // When returning from embedded signup: claim account for current user (if needed) and refetch list
+  // Handle URL params for pending/success status
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const success = params.get("success") === "true";
+    const pending = params.get("status") === "pending";
     const accountId = params.get("account_id");
 
     if (success) {
@@ -67,21 +110,44 @@ export default function ManageWhatsAppPage() {
       }
       window.history.replaceState({}, "", "/integrations/whatsapp");
     }
-  }, []);
 
-  const fetchAccounts = async () => {
-    try {
-      const res = await fetch("/api/whatsapp/config");
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setAccounts(data);
+    if (pending) {
+      setPendingStatus(true);
+      setPendingAccountId(accountId);
+      // Claim the pending account for the current user
+      if (accountId) {
+        fetch("/api/whatsapp/accounts/claim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ accountId }),
+        }).catch(console.error);
       }
-    } catch (error) {
-      console.error("Failed to fetch accounts:", error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [fetchAccounts]);
+
+  // Auto-refresh when pending accounts exist
+  useEffect(() => {
+    if (pendingStatus) {
+      // Set up auto-refresh every 10 seconds
+      refreshIntervalRef.current = setInterval(async () => {
+        const stillPending = await fetchAccounts();
+        if (!stillPending) {
+          // All accounts resolved, stop refreshing
+          if (refreshIntervalRef.current) {
+            clearInterval(refreshIntervalRef.current);
+            refreshIntervalRef.current = null;
+          }
+        }
+      }, 10000);
+
+      return () => {
+        if (refreshIntervalRef.current) {
+          clearInterval(refreshIntervalRef.current);
+        }
+      };
+    }
+  }, [pendingStatus, fetchAccounts]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -121,6 +187,34 @@ export default function ManageWhatsAppPage() {
     setIsModalOpen(true);
   };
 
+  const getStatusBadge = (account: WhatsAppAccount) => {
+    if (account.status === "PENDING_EMBEDDED_SIGNUP") {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600">
+          <Clock size={12} className="animate-pulse" />
+          Setting up...
+        </span>
+      );
+    }
+    if (account.status === "ERROR") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-600">
+          Error
+        </span>
+      );
+    }
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${account.isActive
+            ? "bg-emerald-50 text-emerald-600"
+            : "bg-gray-100 text-gray-400"
+          }`}
+      >
+        {account.isActive ? "Active" : "Inactive"}
+      </span>
+    );
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-gray-50/50">
       <div className="flex justify-between items-end mb-8">
@@ -156,6 +250,31 @@ export default function ManageWhatsAppPage() {
           </button>
         </div>
       </div>
+
+      {/* Pending Status Banner */}
+      {pendingStatus && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+              <RefreshCw className="w-6 h-6 text-amber-600 animate-spin" />
+            </div>
+            <div>
+              <h3 className="font-bold text-amber-900">
+                WhatsApp setup is in progress
+              </h3>
+              <p className="text-amber-700 text-sm">
+                This may take up to 1 minute. The page will automatically update once complete.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => fetchAccounts()}
+            className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-medium text-sm transition-colors"
+          >
+            Check Now
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center h-64 bg-white rounded-3xl border border-gray-100 shadow-sm">
@@ -208,15 +327,22 @@ export default function ManageWhatsAppPage() {
                 >
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${account.status === "PENDING_EMBEDDED_SIGNUP"
+                          ? "bg-amber-100 text-amber-600"
+                          : "bg-emerald-100 text-emerald-600"
+                        }`}>
                         WA
                       </div>
                       <div>
                         <div className="text-sm font-bold text-gray-900">
-                          {account.phoneNumber}
+                          {account.phoneNumber || (
+                            <span className="text-gray-400 italic">Pending...</span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-400">
-                          ID: {account.phoneNumberId}
+                          ID: {account.phoneNumberId || (
+                            <span className="italic">Resolving...</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -224,7 +350,9 @@ export default function ManageWhatsAppPage() {
                   <td className="px-6 py-5">
                     <div className="flex flex-col gap-1">
                       <code className="text-[10px] bg-slate-50 px-2 py-0.5 rounded text-slate-500 border border-slate-100 w-fit font-mono">
-                        WABA: {account.wabaId}
+                        WABA: {account.wabaId || (
+                          <span className="italic text-amber-500">Pending...</span>
+                        )}
                       </code>
                       <code className="text-[10px] bg-emerald-50 px-2 py-0.5 rounded text-emerald-600 border border-emerald-100 w-fit font-mono">
                         Key: {account.accessToken.substring(0, 10)}...
@@ -232,15 +360,7 @@ export default function ManageWhatsAppPage() {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                        account.isActive
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-gray-100 text-gray-400"
-                      }`}
-                    >
-                      {account.isActive ? "Active" : "Inactive"}
-                    </span>
+                    {getStatusBadge(account)}
                   </td>
                   <td className="px-6 py-5 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -275,6 +395,13 @@ export default function ManageWhatsAppPage() {
                               toast.success("Connection Successful!", {
                                 id: toastId,
                               });
+                              // Refresh to get updated account status
+                              fetchAccounts();
+                            } else if (data.pending) {
+                              toast.loading(
+                                "Setup in progress... Please wait and try again.",
+                                { id: toastId, duration: 3000 }
+                              );
                             } else {
                               toast.error("Connection Failed: " + data.error, {
                                 id: toastId,

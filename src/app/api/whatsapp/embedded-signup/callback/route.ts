@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchWabaAndPhoneFromToken } from "@/lib/whatsapp-meta";
+import { startBackgroundResolution } from "@/lib/whatsapp-embedded-resolver";
 
 /** Build app base URL for redirects – use env or forwarded headers so live never redirects to localhost */
 function getBaseUrl(req: NextRequest): string {
@@ -16,6 +17,9 @@ function getBaseUrl(req: NextRequest): string {
 /**
  * Callback endpoint for WhatsApp Embedded Signup
  * This is called by Meta after a customer completes the signup flow
+ * 
+ * Supports eventual consistency: if WABA/phone not immediately available,
+ * creates a PENDING account and starts background resolution.
  */
 export async function GET(req: NextRequest) {
   const baseUrl = getBaseUrl(req);
@@ -96,10 +100,10 @@ export async function GET(req: NextRequest) {
     // Exchange authorization code for access token
     const tokenResponse = await fetch(
       `https://graph.facebook.com/v22.0/oauth/access_token?` +
-        `client_id=${META_APP_ID}&` +
-        `client_secret=${META_APP_SECRET}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `code=${code}`,
+      `client_id=${META_APP_ID}&` +
+      `client_secret=${META_APP_SECRET}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `code=${code}`,
       { method: "GET" },
     );
 
@@ -146,20 +150,42 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Require real Meta IDs – never save placeholder "embedded_*" so Test Connection works
+    // Handle eventual consistency: if WABA or phone number is still missing,
+    // create a PENDING account and start background resolution
     if (!resolvedWabaId || !resolvedPhoneNumberId) {
-      console.error(
-        "Could not resolve WABA ID or Phone Number ID from URL or Graph API",
+      console.log(
+        "WABA or Phone Number ID not immediately available, creating pending account...",
       );
+
+      // Create pending account with accessToken (we can find it later)
+      const pendingAccount = await prisma.whatsAppAccount.create({
+        data: {
+          userId,
+          accessToken,
+          wabaId: resolvedWabaId || null,
+          phoneNumberId: resolvedPhoneNumberId || null,
+          phoneNumber: phoneNumber || null,
+          apiVersion: "v22.0",
+          isActive: false,
+          status: "PENDING_EMBEDDED_SIGNUP",
+        },
+      });
+
+      console.log(`Created pending account ${pendingAccount.id} for user ${userId}`);
+
+      // Start background resolution (non-blocking)
+      startBackgroundResolution(pendingAccount.id, accessToken);
+
+      // Redirect to pending status page
       return NextResponse.redirect(
         new URL(
-          "/integrations/whatsapp/embedded-signup?error=waba_phone_not_found",
+          `/integrations/whatsapp?status=pending&account_id=${pendingAccount.id}`,
           baseUrl,
         ),
       );
     }
 
-    // Create or update WhatsApp account with real Meta IDs
+    // WABA and phone number available - create ACTIVE account
     const account = await prisma.whatsAppAccount.upsert({
       where: {
         userId_phoneNumberId: {
@@ -172,6 +198,7 @@ export async function GET(req: NextRequest) {
         wabaId: resolvedWabaId,
         phoneNumber: phoneNumber || undefined,
         isActive: true,
+        status: "ACTIVE",
       },
       create: {
         userId,
@@ -181,6 +208,7 @@ export async function GET(req: NextRequest) {
         phoneNumber: phoneNumber || undefined,
         apiVersion: "v22.0",
         isActive: true,
+        status: "ACTIVE",
       },
     });
 

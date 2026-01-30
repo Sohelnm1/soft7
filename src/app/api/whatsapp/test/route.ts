@@ -28,31 +28,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
+    // If account is in PENDING state or has missing/placeholder WABA ID, try to repair
+    const needsRepair =
+      account.status === "PENDING_EMBEDDED_SIGNUP" ||
+      !account.wabaId ||
+      !account.phoneNumberId ||
+      isPlaceholderMetaId(account.wabaId);
+
+    if (needsRepair && account.accessToken) {
+      console.log(`[Test Connection] Attempting to repair account ${account.id}`);
+
+      const fromApi = await fetchWabaAndPhoneFromToken(account.accessToken);
+
+      if (fromApi?.wabaId && fromApi?.phoneNumberId) {
+        account = await prisma.whatsAppAccount.update({
+          where: { id: account.id },
+          data: {
+            wabaId: fromApi.wabaId,
+            phoneNumberId: fromApi.phoneNumberId,
+            phoneNumber: fromApi.phoneNumber || account.phoneNumber,
+            status: "ACTIVE",
+            isActive: true,
+          },
+        });
+        console.log(`[Test Connection] Successfully repaired account ${account.id}`);
+      } else if (!account.wabaId || !account.phoneNumberId) {
+        // Still can't get the IDs - return informative error
+        return NextResponse.json(
+          {
+            error:
+              "WhatsApp setup is still in progress. Please wait a moment and try again.",
+            pending: true,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Verify we have required fields
     if (!account.wabaId || !account.accessToken) {
       return NextResponse.json(
         { error: "Incomplete configuration" },
         { status: 400 },
       );
-    }
-
-    // If account has placeholder WABA ID (e.g. embedded_... from old callback), repair from token so Test Connection works
-    if (isPlaceholderMetaId(account.wabaId)) {
-      const fromApi = await fetchWabaAndPhoneFromToken(account.accessToken);
-      if (fromApi?.wabaId) {
-        account = await prisma.whatsAppAccount.update({
-          where: { id: account.id },
-          data: {
-            wabaId: fromApi.wabaId,
-            ...(fromApi.phoneNumber
-              ? { phoneNumber: fromApi.phoneNumber }
-              : {}),
-            ...(fromApi.phoneNumberId &&
-            isPlaceholderMetaId(account.phoneNumberId)
-              ? { phoneNumberId: fromApi.phoneNumberId }
-              : {}),
-          },
-        });
-      }
     }
 
     // Try to fetch templates as a test
