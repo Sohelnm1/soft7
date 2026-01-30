@@ -32,6 +32,32 @@ export async function GET(req: NextRequest) {
     const wabaId = searchParams.get("waba_id");
     const phoneNumberId = searchParams.get("phone_number_id");
 
+    // ============================================
+    // EMBEDDED SIGNUP CALLBACK LOGGING
+    // Log all incoming parameters from Meta
+    // ============================================
+    console.log("\n");
+    console.log("#".repeat(80));
+    console.log("[EMBEDDED SIGNUP CALLBACK RECEIVED]", new Date().toISOString());
+    console.log("Full URL:", req.url);
+    console.log("\n--- Query Parameters from Meta ---");
+    console.log("code:", code ? `${code.substring(0, 20)}...` : "null");
+    console.log("state:", state);
+    console.log("error:", metaError);
+    console.log("waba_id:", wabaId);
+    console.log("phone_number_id:", phoneNumberId);
+
+    // Log ALL query parameters to see everything Meta sends
+    console.log("\n--- All Query Parameters ---");
+    searchParams.forEach((value, key) => {
+      if (key === "code" || key === "access_token") {
+        console.log(`${key}:`, value ? `${value.substring(0, 20)}...` : "null");
+      } else {
+        console.log(`${key}:`, value);
+      }
+    });
+    console.log("#".repeat(80));
+
     // User cancelled or Meta returned an error – show friendly message
     if (metaError) {
       const errorMsg = metaError === "access_denied" ? "cancelled" : metaError;
@@ -63,6 +89,7 @@ export async function GET(req: NextRequest) {
         if (!isNaN(parsedUserId)) {
           userId = parsedUserId;
         }
+        console.log("Decoded state:", decoded, "-> userId:", userId);
       }
     } catch {
       // State is optional for new customer signups
@@ -97,6 +124,9 @@ export async function GET(req: NextRequest) {
 
     const redirectUri = `${baseUrl}/api/whatsapp/embedded-signup/callback`;
 
+    console.log("\n--- Token Exchange ---");
+    console.log("Exchanging code for access token...");
+
     // Exchange authorization code for access token
     const tokenResponse = await fetch(
       `https://graph.facebook.com/v22.0/oauth/access_token?` +
@@ -108,6 +138,15 @@ export async function GET(req: NextRequest) {
     );
 
     const tokenData = await tokenResponse.json();
+
+    console.log("Token exchange response status:", tokenResponse.status);
+    console.log("Token data keys:", Object.keys(tokenData));
+    if (tokenData.access_token) {
+      console.log("✅ Access token received");
+    } else {
+      console.log("❌ No access token in response");
+      console.log("Token response:", JSON.stringify(tokenData, null, 2));
+    }
 
     if (!tokenResponse.ok || !tokenData.access_token) {
       console.error("Failed to exchange code for token:", tokenData);
@@ -126,14 +165,23 @@ export async function GET(req: NextRequest) {
     let resolvedPhoneNumberId = phoneNumberId;
     let phoneNumber: string | null = null;
 
+    console.log("\n--- WABA/Phone Resolution ---");
+    console.log("WABA ID from URL:", resolvedWabaId);
+    console.log("Phone Number ID from URL:", resolvedPhoneNumberId);
+
     if (!resolvedWabaId || !resolvedPhoneNumberId) {
+      console.log("Fetching WABA/Phone from Graph API...");
       const fromApi = await fetchWabaAndPhoneFromToken(accessToken);
+      console.log("Graph API result:", JSON.stringify(fromApi, null, 2));
       if (fromApi) {
         resolvedWabaId = resolvedWabaId || fromApi.wabaId;
         resolvedPhoneNumberId = resolvedPhoneNumberId || fromApi.phoneNumberId;
         phoneNumber = fromApi.phoneNumber || phoneNumber;
       }
     }
+
+    console.log("Resolved WABA ID:", resolvedWabaId);
+    console.log("Resolved Phone Number ID:", resolvedPhoneNumberId);
 
     // Get phone display number if we have phoneNumberId
     if (resolvedPhoneNumberId && !phoneNumber) {
@@ -143,6 +191,7 @@ export async function GET(req: NextRequest) {
           { method: "GET" },
         );
         const phoneData = await phoneResponse.json();
+        console.log("Phone number API response:", JSON.stringify(phoneData, null, 2));
         phoneNumber =
           phoneData.display_phone_number || phoneData.verified_name || null;
       } catch (error) {
