@@ -177,42 +177,73 @@ export class MessageService {
       });
     }
 
-    // Conversation – upsert by (userId, phone) using normalized phone to avoid duplicates (e.g. 91766... vs +91766...)
+    // Conversation – First try to find existing by userId+contactId or userId+phone
+    // We have TWO unique constraints: @@unique([userId, phone]) and @@unique([userId, contactId])
     const phoneKey = normalizePhone(contact.phone || from);
     let conversation;
-    try {
-      conversation = await prisma.conversation.upsert({
-        where: { userId_phone: { userId, phone: phoneKey } },
-        update: {
+
+    // First, check if a conversation exists for this contact (by contactId)
+    conversation = await prisma.conversation.findFirst({
+      where: {
+        userId,
+        OR: [
+          { contactId: contact.id },
+          { phone: phoneKey }
+        ]
+      }
+    });
+
+    if (conversation) {
+      // Update existing conversation
+      conversation = await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
           lastInboundAt: new Date(),
           contactId: contact.id,
+          phone: phoneKey, // Ensure phone is normalized
           name: name ?? undefined,
         },
-        create: {
-          userId,
-          phone: phoneKey,
-          name,
-          contactId: contact.id,
-          lastInboundAt: new Date(),
-        },
       });
-    } catch (err: any) {
-      // Race: another job created (userId, phone) between our lookup and create; use existing row
-      if (err?.code === "P2002") {
-        const existing = await prisma.conversation.findUnique({
-          where: { userId_phone: { userId, phone: phoneKey } },
+    } else {
+      // Create new conversation
+      try {
+        conversation = await prisma.conversation.create({
+          data: {
+            userId,
+            phone: phoneKey,
+            name,
+            contactId: contact.id,
+            lastInboundAt: new Date(),
+          },
         });
-        if (existing) {
-          conversation = await prisma.conversation.update({
-            where: { id: existing.id },
-            data: {
-              lastInboundAt: new Date(),
-              contactId: contact.id,
-              name: name ?? undefined,
-            },
+      } catch (err: any) {
+        // Race condition: another job created it between our lookup and create
+        if (err?.code === "P2002") {
+          conversation = await prisma.conversation.findFirst({
+            where: {
+              userId,
+              OR: [
+                { contactId: contact.id },
+                { phone: phoneKey }
+              ]
+            }
           });
-        } else throw err;
-      } else throw err;
+          if (conversation) {
+            conversation = await prisma.conversation.update({
+              where: { id: conversation.id },
+              data: {
+                lastInboundAt: new Date(),
+                contactId: contact.id,
+                name: name ?? undefined,
+              },
+            });
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
     }
 
     // Save Message
