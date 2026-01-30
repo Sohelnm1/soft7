@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 declare global {
@@ -10,43 +11,54 @@ declare global {
   }
 }
 
+// Configuration from Meta Dashboard - Embedded Signup Builder
+const CONFIG_ID = "399803713150682";
+const APP_ID = "1323859021659502";
+const SDK_VERSION = "v24.0";
+
+interface SessionInfoResponse {
+  type: string;
+  event: string;
+  data: {
+    phone_number_id?: string;
+    waba_id?: string;
+    current_step?: string;
+    error_message?: string;
+  };
+}
+
 export default function WhatsAppSignupPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [appId, setAppId] = useState<string>("");
-  const [redirectUri, setRedirectUri] = useState<string>("");
-  const [state, setState] = useState<string>("");
+  const [sdkReady, setSdkReady] = useState(false);
+  const [sessionInfo, setSessionInfo] = useState<SessionInfoResponse | null>(null);
+  const [sdkResponse, setSdkResponse] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Get state token for user identification
+  const [stateToken, setStateToken] = useState<string>("");
 
   useEffect(() => {
-    // Fetch app configuration (includes state for logged-in user so account is linked to them)
+    // Fetch state token (for linking account to logged-in user)
     fetch("/api/whatsapp/embedded-signup/public-config")
       .then((res) => res.json())
       .then((data) => {
-        if (data.appId) {
-          setAppId(data.appId);
-          setRedirectUri(data.redirectUri || "");
-          setState(data.state || "");
-          initializeFacebookSDK(data.appId);
-        } else {
-          setError("App configuration not found");
-          setLoading(false);
+        if (data.state) {
+          setStateToken(data.state);
         }
       })
-      .catch((err) => {
-        console.error("Failed to load config:", err);
-        setError("Failed to load signup configuration");
-        setLoading(false);
-      });
+      .catch(console.error);
   }, []);
 
-  const [sdkReady, setSdkReady] = useState(false);
-
-  const initializeFacebookSDK = (appId: string) => {
+  // Initialize Facebook SDK
+  useEffect(() => {
     window.fbAsyncInit = function () {
       window.FB.init({
-        appId: appId,
+        appId: APP_ID,
+        autoLogAppEvents: true,
         xfbml: true,
-        version: "v22.0",
+        version: SDK_VERSION,
       });
       setLoading(false);
       setSdkReady(true);
@@ -60,25 +72,123 @@ export default function WhatsAppSignupPage() {
       js = d.createElement(s) as HTMLScriptElement;
       js.id = id;
       js.src = "https://connect.facebook.net/en_US/sdk.js";
+      js.crossOrigin = "anonymous";
+      js.async = true;
+      js.defer = true;
       if (fjs && fjs.parentNode) {
         fjs.parentNode.insertBefore(js, fjs);
       }
     })(document, "script", "facebook-jssdk");
-  };
+  }, []);
 
-  // Parse XFBML so the embedded signup widget renders (required when div is added by React)
+  // Listen for messages from Facebook popup (Session Info)
   useEffect(() => {
-    if (!sdkReady || !appId || typeof window === "undefined") return;
-    const timer = setTimeout(() => {
-      const container = document.getElementById("embedded-signup-container");
-      if (window.FB?.XFBML?.parse && container) {
-        window.FB.XFBML.parse(container);
-      } else if (window.FB?.XFBML?.parse) {
-        window.FB.XFBML.parse();
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== "https://www.facebook.com" && event.origin !== "https://web.facebook.com") {
+        return;
       }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [sdkReady, appId]);
+      try {
+        const data = JSON.parse(event.data) as SessionInfoResponse;
+        if (data.type === "WA_EMBEDDED_SIGNUP") {
+          console.log("WA_EMBEDDED_SIGNUP event received:", data);
+          setSessionInfo(data);
+
+          if (data.event === "FINISH") {
+            const { phone_number_id, waba_id } = data.data;
+            console.log("✅ Embedded Signup FINISH:", { phone_number_id, waba_id });
+            // Note: The actual account creation happens on the backend via webhook + callback
+          } else if (data.event === "CANCEL") {
+            console.warn("Embedded Signup cancelled at step:", data.data.current_step);
+            setError("Signup was cancelled. Please try again.");
+          } else if (data.event === "ERROR") {
+            console.error("Embedded Signup error:", data.data.error_message);
+            setError(data.data.error_message || "An error occurred during signup");
+          }
+        }
+      } catch {
+        // Non-JSON messages, ignore
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  // FB.login callback - handles the authorization code
+  const fbLoginCallback = useCallback(async (response: any) => {
+    console.log("FB.login response:", response);
+    setSdkResponse(response);
+
+    if (response.authResponse && response.authResponse.code) {
+      const code = response.authResponse.code;
+      console.log("Authorization code received, exchanging for token...");
+      setIsProcessing(true);
+
+      try {
+        // Send the code to our backend to exchange for access token
+        const callbackUrl = `/api/whatsapp/embedded-signup/callback?code=${encodeURIComponent(code)}${stateToken ? `&state=${encodeURIComponent(stateToken)}` : ""}`;
+
+        // Redirect to callback endpoint to complete the signup
+        window.location.href = callbackUrl;
+      } catch (err) {
+        console.error("Error processing signup:", err);
+        setError("Failed to complete signup. Please try again.");
+        setIsProcessing(false);
+      }
+    } else if (response.status === "unknown") {
+      // User cancelled login
+      console.log("User cancelled login");
+    } else {
+      console.log("FB.login did not return authResponse");
+    }
+  }, [stateToken]);
+
+  // Launch WhatsApp Embedded Signup using FB.login
+  const launchWhatsAppSignup = () => {
+    if (!sdkReady || !window.FB) {
+      setError("Facebook SDK not ready. Please refresh the page.");
+      return;
+    }
+
+    window.FB.login(fbLoginCallback, {
+      config_id: CONFIG_ID,
+      response_type: "code", // Required for System User access token
+      override_default_response_type: true,
+      extras: {
+        version: "v3",
+        setup: {
+          business: {
+            id: null,
+            name: null,
+            email: null,
+            phone: { code: null, number: null },
+            website: null,
+            address: {
+              streetAddress1: null,
+              streetAddress2: null,
+              city: null,
+              state: null,
+              zipPostal: null,
+              country: null,
+            },
+            timezone: null,
+          },
+          phone: {
+            displayName: null,
+            category: null,
+            description: null,
+          },
+          preVerifiedPhone: {
+            ids: null,
+          },
+          solutionID: null,
+          whatsAppBusinessAccount: {
+            ids: null,
+          },
+        },
+      },
+    });
+  };
 
   if (loading) {
     return (
@@ -91,15 +201,13 @@ export default function WhatsAppSignupPage() {
     );
   }
 
-  if (error) {
+  if (isProcessing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
-          <div className="text-center">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
-            <p className="text-gray-600">{error}</p>
-          </div>
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
+          <p className="text-gray-600">Setting up your WhatsApp Business account...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait, this may take a moment.</p>
         </div>
       </div>
     );
@@ -107,6 +215,7 @@ export default function WhatsAppSignupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 py-12 px-4">
+      <div id="fb-root"></div>
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <div className="text-center mb-8">
@@ -127,6 +236,15 @@ export default function WhatsAppSignupPage() {
               with messaging
             </p>
           </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <p className="text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
 
           <div className="bg-gray-50 rounded-xl p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -160,49 +278,38 @@ export default function WhatsAppSignupPage() {
             </ul>
           </div>
 
-          {/* Embedded Signup Widget - SDK replaces this div with the actual button */}
-          <div
-            id="embedded-signup-container"
-            className="text-center min-h-[120px]"
-          >
-            <div
-              className="fb-messenger-embedded-signup"
-              data-app-id={appId}
-              data-redirect-uri={
-                redirectUri ||
-                (typeof window !== "undefined"
-                  ? `${window.location.origin}/api/whatsapp/embedded-signup/callback`
-                  : "")
-              }
-              {...(state ? { "data-state": state } : {})}
-            />
+          {/* Embedded Signup Button */}
+          <div className="text-center">
+            <button
+              onClick={launchWhatsAppSignup}
+              disabled={!sdkReady}
+              className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-bold text-white bg-[#1877f2] hover:bg-[#166fe5] transition disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+            >
+              {sdkReady ? "Login with Facebook" : "Loading..."}
+            </button>
           </div>
-          {/* Fallback: if widget doesn't show (e.g. localhost), show helpful message + link */}
-          <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-gray-500">
-              If the button above doesn&apos;t appear: the page must be on a
-              domain allowed in Meta (Facebook Login for Business → Allowed
-              Domains). Testing on <strong>localhost</strong>? Add{" "}
-              <code className="bg-gray-100 px-1 rounded">
-                http://localhost:3000
-              </code>{" "}
-              there, or use production:{" "}
-              <a
-                href="https://soft7.wapsuite.in/signup/whatsapp"
-                className="text-emerald-600 hover:underline"
-              >
-                https://soft7.wapsuite.in/signup/whatsapp
-              </a>
-            </p>
-            {typeof window !== "undefined" && (
-              <a
-                href={`https://www.facebook.com/v22.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(`${window.location.origin}/api/whatsapp/embedded-signup/callback`)}&response_type=code&scope=whatsapp_business_management,whatsapp_business_messaging,business_management`}
-                className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition"
-              >
-                Connect with WhatsApp Business (direct link)
-              </a>
-            )}
-          </div>
+
+          {/* Debug info (remove in production) */}
+          {(sessionInfo || sdkResponse) && (
+            <div className="mt-6 space-y-4 text-sm">
+              {sessionInfo && (
+                <div>
+                  <p className="font-medium text-gray-700 mb-1">Session Info Response:</p>
+                  <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto text-xs">
+                    {JSON.stringify(sessionInfo, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {sdkResponse && (
+                <div>
+                  <p className="font-medium text-gray-700 mb-1">SDK Response:</p>
+                  <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto text-xs">
+                    {JSON.stringify(sdkResponse, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-6 text-center">
