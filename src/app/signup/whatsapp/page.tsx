@@ -115,26 +115,21 @@ export default function WhatsAppSignupPage() {
   }, []);
 
   // FB.login callback - handles the authorization code
-  const fbLoginCallback = useCallback(async (response: any) => {
+  // Note: Must be a regular function (not async) as FB.login doesn't support async callbacks
+  const fbLoginCallback = useCallback((response: any) => {
     console.log("FB.login response:", response);
     setSdkResponse(response);
 
     if (response.authResponse && response.authResponse.code) {
       const code = response.authResponse.code;
-      console.log("Authorization code received, exchanging for token...");
+      console.log("Authorization code received, redirecting to callback...");
       setIsProcessing(true);
 
-      try {
-        // Send the code to our backend to exchange for access token
-        const callbackUrl = `/api/whatsapp/embedded-signup/callback?code=${encodeURIComponent(code)}${stateToken ? `&state=${encodeURIComponent(stateToken)}` : ""}`;
+      // Send the code to our backend to exchange for access token
+      const callbackUrl = `/api/whatsapp/embedded-signup/callback?code=${encodeURIComponent(code)}${stateToken ? `&state=${encodeURIComponent(stateToken)}` : ""}`;
 
-        // Redirect to callback endpoint to complete the signup
-        window.location.href = callbackUrl;
-      } catch (err) {
-        console.error("Error processing signup:", err);
-        setError("Failed to complete signup. Please try again.");
-        setIsProcessing(false);
-      }
+      // Redirect to callback endpoint to complete the signup
+      window.location.href = callbackUrl;
     } else if (response.status === "unknown") {
       // User cancelled login
       console.log("User cancelled login");
