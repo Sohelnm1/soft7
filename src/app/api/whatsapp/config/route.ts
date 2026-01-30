@@ -108,3 +108,42 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
+export async function DELETE(req: NextRequest) {
+    try {
+        const user = await getCurrentUser();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const url = new URL(req.url);
+        const accountId = url.searchParams.get("id");
+
+        if (!accountId) {
+            return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
+        }
+
+        // Find the account and verify ownership
+        const account = await prisma.whatsAppAccount.findUnique({
+            where: { id: parseInt(accountId) }
+        });
+
+        if (!account) {
+            return NextResponse.json({ error: "Account not found" }, { status: 404 });
+        }
+
+        if (account.userId !== user.id) {
+            return NextResponse.json({ error: "Unauthorized to delete this account" }, { status: 403 });
+        }
+
+        // Delete the account and related data
+        await prisma.whatsAppAccount.delete({
+            where: { id: parseInt(accountId) }
+        });
+
+        return NextResponse.json({ success: true, message: "Account deleted successfully" });
+    } catch (error: any) {
+        console.error("WhatsApp Config Delete Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}

@@ -206,13 +206,36 @@ export default function ManageWhatsAppPage() {
     return (
       <span
         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${account.isActive
-            ? "bg-emerald-50 text-emerald-600"
-            : "bg-gray-100 text-gray-400"
+          ? "bg-emerald-50 text-emerald-600"
+          : "bg-gray-100 text-gray-400"
           }`}
       >
         {account.isActive ? "Active" : "Inactive"}
       </span>
     );
+  };
+
+  const handleDelete = async (accountId: number) => {
+    if (!confirm("Are you sure you want to delete this WhatsApp account?")) {
+      return;
+    }
+
+    const toastId = toast.loading("Deleting account...");
+    try {
+      const res = await fetch(`/api/whatsapp/config?id=${accountId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        toast.success("Account deleted successfully", { id: toastId });
+        fetchAccounts();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to delete account", { id: toastId });
+      }
+    } catch (error) {
+      toast.error("An error occurred while deleting", { id: toastId });
+    }
   };
 
   return (
@@ -328,8 +351,8 @@ export default function ManageWhatsAppPage() {
                   <td className="px-6 py-5 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${account.status === "PENDING_EMBEDDED_SIGNUP"
-                          ? "bg-amber-100 text-amber-600"
-                          : "bg-emerald-100 text-emerald-600"
+                        ? "bg-amber-100 text-amber-600"
+                        : "bg-emerald-100 text-emerald-600"
                         }`}>
                         WA
                       </div>
@@ -372,6 +395,7 @@ export default function ManageWhatsAppPage() {
                         <Settings size={18} />
                       </button>
                       <button
+                        onClick={() => handleDelete(account.id)}
                         className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                         title="Delete"
                       >
