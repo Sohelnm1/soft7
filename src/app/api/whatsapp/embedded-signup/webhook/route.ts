@@ -29,31 +29,91 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
     try {
+        // ============================================
+        // EMBEDDED SIGNUP WEBHOOK LOGGING
+        // Log all incoming webhook events for debugging
+        // ============================================
+        console.log("\n");
+        console.log("*".repeat(80));
+        console.log("[EMBEDDED SIGNUP WEBHOOK RECEIVED]", new Date().toISOString());
+        console.log("Endpoint: /api/whatsapp/embedded-signup/webhook");
+
         // Verify webhook signature
         const signature = req.headers.get("x-hub-signature-256");
+        console.log("Signature Present:", !!signature);
+
         if (!signature) {
+            console.log("❌ Missing signature - rejecting request");
             return NextResponse.json({ error: "Missing signature" }, { status: 401 });
         }
 
         const body = await req.text();
+        console.log("Raw Body Length:", body.length);
+
         const expectedSignature = `sha256=${crypto
             .createHmac("sha256", APP_SECRET)
             .update(body)
             .digest("hex")}`;
 
         if (signature !== expectedSignature) {
-            console.error("Invalid webhook signature");
+            console.error("❌ Invalid webhook signature");
+            console.log("Received:", signature.substring(0, 30) + "...");
+            console.log("Expected:", expectedSignature.substring(0, 30) + "...");
             return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
         }
+        console.log("✅ Signature verified successfully");
 
         const data = JSON.parse(body);
+        console.log("Object Type:", data.object);
+        console.log("Full Payload:", JSON.stringify(data, null, 2));
+
+        // Log each entry and change
+        if (data.entry && Array.isArray(data.entry)) {
+            data.entry.forEach((entry: any, entryIndex: number) => {
+                console.log(`\n--- Entry ${entryIndex} ---`);
+                console.log("Entry ID:", entry.id);
+
+                if (entry.changes && Array.isArray(entry.changes)) {
+                    entry.changes.forEach((change: any, changeIndex: number) => {
+                        console.log(`\n  [Change ${changeIndex}]`);
+                        console.log("  Field:", change.field);
+                        console.log("  Value:", JSON.stringify(change.value, null, 4));
+
+                        // Specifically log embedded signup related fields
+                        if (change.field === "embedded_signup") {
+                            console.log("\n  🔔 EMBEDDED_SIGNUP FIELD DETECTED!");
+                            console.log("  Event Type:", change.value?.event);
+                            console.log("  WABA ID:", change.value?.waba_id);
+                            console.log("  Phone Number ID:", change.value?.phone_number_id);
+                            console.log("  Access Token Present:", !!change.value?.access_token);
+                            console.log("  User ID:", change.value?.user_id);
+                        }
+
+                        if (change.field === "account_update") {
+                            console.log("\n  🔔 ACCOUNT_UPDATE FIELD DETECTED!");
+                            console.log("  Event:", change.value?.event);
+                            console.log("  WABA Info:", JSON.stringify(change.value?.waba_info, null, 4));
+                            console.log("  Phone Info:", JSON.stringify(change.value?.phone_info, null, 4));
+                        }
+                    });
+                }
+            });
+        }
+        console.log("*".repeat(80));
+        console.log("\n");
 
         // Handle different event types
         if (data.object === "whatsapp_business_account") {
             for (const entry of data.entry || []) {
                 for (const change of entry.changes || []) {
+                    // Handle both embedded_signup and account_update fields
                     if (change.field === "embedded_signup") {
                         await handleEmbeddedSignupEvent(change.value);
+                    }
+                    // Also handle account_update with PARTNER_ADDED (Meta's actual embedded signup notification)
+                    if (change.field === "account_update" && change.value?.event === "PARTNER_ADDED") {
+                        console.log("📥 Processing account_update PARTNER_ADDED event...");
+                        await handleAccountUpdatePartnerAdded(entry, change.value);
                     }
                 }
             }
@@ -184,5 +244,64 @@ async function handleEmbeddedSignupEvent(event: any) {
         }
     } catch (error: any) {
         console.error("Error handling embedded signup event:", error);
+    }
+}
+
+/**
+ * Handle account_update webhook with PARTNER_ADDED event
+ * Meta sends this when a customer completes embedded signup (not the embedded_signup field)
+ */
+async function handleAccountUpdatePartnerAdded(entry: any, value: any) {
+    try {
+        const wabaId = value?.waba_info?.waba_id;
+        const ownerBusinessId = value?.waba_info?.owner_business_id;
+        const phoneInfo = value?.phone_info;
+
+        console.log("[Embedded Signup Webhook] PARTNER_ADDED event received:");
+        console.log("  WABA ID:", wabaId);
+        console.log("  Owner Business ID:", ownerBusinessId);
+        console.log("  Phone Info:", JSON.stringify(phoneInfo, null, 2));
+
+        if (!wabaId) {
+            console.log("No WABA ID in PARTNER_ADDED event, cannot update account");
+            return;
+        }
+
+        // Try to find and update existing PENDING account by WABA ID
+        const existing = await prisma.whatsAppAccount.findFirst({
+            where: { wabaId },
+        });
+
+        if (existing) {
+            // Update with phone number info if available
+            const phoneNumberId = phoneInfo?.phone_number_id;
+            const phoneNumber = phoneInfo?.display_phone_number;
+
+            await prisma.whatsAppAccount.update({
+                where: { id: existing.id },
+                data: {
+                    isActive: true,
+                    status: "ACTIVE",
+                    ...(phoneNumberId && { phoneNumberId }),
+                    ...(phoneNumber && { phoneNumber }),
+                },
+            });
+
+            console.log(`✅ [Webhook] Updated existing account ${existing.id} for WABA ${wabaId} to ACTIVE`);
+        } else {
+            // Try to update pending account via resolver
+            const updated = await updateAccountFromWebhook({
+                wabaId,
+                phoneNumberId: phoneInfo?.phone_number_id,
+            });
+
+            if (updated) {
+                console.log(`✅ [Webhook] Updated pending account via resolver for WABA ${wabaId}`);
+            } else {
+                console.log(`⚠️ [Webhook] No existing account found for WABA ${wabaId}`);
+            }
+        }
+    } catch (error: any) {
+        console.error("Error handling account_update PARTNER_ADDED:", error);
     }
 }
