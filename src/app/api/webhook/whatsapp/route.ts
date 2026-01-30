@@ -94,15 +94,26 @@ export async function POST(req: NextRequest) {
     const field = change?.field;
     const value = change?.value;
 
-    // Meta sends embedded signup completion as account_update with event PARTNER_ADDED
+    // Meta sends embedded signup events as account_update with various event types:
+    // - PARTNER_APP_INSTALLED: When app is installed on WABA (has waba_id)
+    // - PARTNER_ADDED: When partner relationship is established
     // (There is no "embedded_signup" webhook field in the dashboard - subscribe to account_update)
     if (field === "embedded_signup") {
       await handleEmbeddedSignupWebhook(value);
       return NextResponse.json({ status: "accepted" });
     }
-    if (field === "account_update" && value?.event === "PARTNER_ADDED") {
-      await handleAccountUpdatePartnerAdded(entry, value);
-      return NextResponse.json({ status: "accepted" });
+
+    // Handle account_update events for embedded signup
+    if (field === "account_update") {
+      const eventType = value?.event;
+
+      // PARTNER_APP_INSTALLED - This is the main event we receive during embedded signup
+      // It contains waba_id in waba_info
+      if (eventType === "PARTNER_APP_INSTALLED" || eventType === "PARTNER_ADDED") {
+        console.log(`📥 Processing account_update ${eventType} event...`);
+        await handleAccountUpdatePartnerEvent(entry, value);
+        return NextResponse.json({ status: "accepted" });
+      }
     }
 
     // 1️⃣ Fast Ingest: Extract Meta ID for Queue Idempotency
@@ -236,30 +247,96 @@ async function handleEmbeddedSignupWebhook(event: any) {
   }
 }
 
-/** Meta sends embedded signup completion as account_update with event PARTNER_ADDED (no access_token in payload). */
-async function handleAccountUpdatePartnerAdded(entry: any, value: any) {
+/** Meta sends embedded signup events as account_update with PARTNER_APP_INSTALLED or PARTNER_ADDED. */
+async function handleAccountUpdatePartnerEvent(entry: any, value: any) {
   try {
+    const eventType = value?.event;
     const wabaId = value?.waba_info?.waba_id;
     const ownerBusinessId = value?.waba_info?.owner_business_id;
-    if (!wabaId) return;
-    console.log("[Webhook] Embedded signup completed (PARTNER_ADDED):", {
+
+    console.log(`[Webhook] Processing ${eventType}:`, {
       wabaId,
       ownerBusinessId,
     });
-    // Account creation + token happens in OAuth callback; here we only log or update existing by waba_id
-    const existing = await prisma.whatsAppAccount.findFirst({
+
+    if (!wabaId) {
+      console.log("[Webhook] No WABA ID in event, skipping");
+      return;
+    }
+
+    // First, try to find existing account by wabaId
+    let account = await prisma.whatsAppAccount.findFirst({
       where: { wabaId },
     });
-    if (existing) {
+
+    if (account) {
+      // Account already exists with this WABA ID, activate it
       await prisma.whatsAppAccount.update({
-        where: { id: existing.id },
-        data: { isActive: true },
+        where: { id: account.id },
+        data: { isActive: true, status: "ACTIVE" },
       });
-      console.log(
-        `[Webhook] Updated existing account ${existing.id} for WABA ${wabaId}`,
-      );
+      console.log(`✅ [Webhook] Activated existing account ${account.id} for WABA ${wabaId}`);
+      return;
     }
+
+    // No account with this WABA ID - look for pending accounts to update
+    // Find the most recent pending account (created during OAuth callback)
+    const pendingAccount = await prisma.whatsAppAccount.findFirst({
+      where: {
+        status: "PENDING_EMBEDDED_SIGNUP",
+        wabaId: null, // Account without WABA ID
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (pendingAccount) {
+      // Update the pending account with the WABA ID from webhook
+      await prisma.whatsAppAccount.update({
+        where: { id: pendingAccount.id },
+        data: {
+          wabaId,
+        },
+      });
+      console.log(`[Webhook] Updated pending account ${pendingAccount.id} with WABA ${wabaId}`);
+
+      // Now try to fetch phone numbers using the account's access token
+      if (pendingAccount.accessToken) {
+        try {
+          console.log(`[Webhook] Fetching phone numbers for WABA ${wabaId}...`);
+          const phonesResponse = await fetch(
+            `https://graph.facebook.com/v22.0/${wabaId}/phone_numbers?access_token=${encodeURIComponent(pendingAccount.accessToken)}`,
+            { method: "GET" }
+          );
+          const phonesData = await phonesResponse.json();
+          console.log(`[Webhook] Phone numbers response:`, JSON.stringify(phonesData, null, 2));
+
+          if (phonesData.data && phonesData.data.length > 0) {
+            const firstPhone = phonesData.data[0];
+            await prisma.whatsAppAccount.update({
+              where: { id: pendingAccount.id },
+              data: {
+                phoneNumberId: firstPhone.id,
+                phoneNumber: firstPhone.display_phone_number || firstPhone.verified_name,
+                isActive: true,
+                status: "ACTIVE",
+              },
+            });
+            console.log(`✅ [Webhook] Account ${pendingAccount.id} fully resolved: WABA=${wabaId}, Phone=${firstPhone.id} -> ACTIVE`);
+            return;
+          } else {
+            console.log(`[Webhook] No phone numbers found yet for WABA ${wabaId}, leaving account in partially resolved state`);
+            // Leave account with WABA ID but still pending phone resolution
+          }
+        } catch (phoneError) {
+          console.error(`[Webhook] Error fetching phone numbers:`, phoneError);
+        }
+      }
+
+      return;
+    }
+
+    console.log(`⚠️ [Webhook] No pending account found to update for WABA ${wabaId}`);
   } catch (error: any) {
-    console.error("Error handling account_update PARTNER_ADDED:", error);
+    console.error("Error handling account_update event:", error);
   }
 }
