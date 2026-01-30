@@ -122,7 +122,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const redirectUri = `${baseUrl}/api/whatsapp/embedded-signup/callback`;
+    // For FB.login with Embedded Signup, the redirect_uri must match what's configured 
+    // in Meta's Embedded Signup Builder - use NEXT_PUBLIC_APP_URL (production URL)
+    // because even when testing locally, the code was issued for the production redirect_uri
+    const configuredRedirectUri = process.env.NEXT_PUBLIC_APP_URL
+      ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/api/whatsapp/embedded-signup/callback`
+      : `${baseUrl}/api/whatsapp/embedded-signup/callback`;
+
+    console.log("Using redirect_uri:", configuredRedirectUri);
 
     console.log("\n--- Token Exchange ---");
     console.log("Exchanging code for access token...");
@@ -132,7 +139,7 @@ export async function GET(req: NextRequest) {
       `https://graph.facebook.com/v22.0/oauth/access_token?` +
       `client_id=${META_APP_ID}&` +
       `client_secret=${META_APP_SECRET}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `redirect_uri=${encodeURIComponent(configuredRedirectUri)}&` +
       `code=${code}`,
       { method: "GET" },
     );
