@@ -98,6 +98,33 @@ const isMyMessage = (msg: Message): boolean => {
   return msg.direction === "outgoing" || msg.sentBy === "me" || msg.sentBy === "campaign" || msg.senderId === "me" || msg.from === "me";
 };
 
+// Format preview text for media messages
+const formatPreviewText = (text: string): string => {
+  if (!text) return text;
+
+  // Replace media type placeholders with emoji indicators
+  const mediaFormats: Record<string, string> = {
+    '[IMAGE]': '📷 Photo',
+    '[VIDEO]': '🎬 Video',
+    '[AUDIO]': '🎵 Voice message',
+    '[DOCUMENT]': '📄 Document',
+    '[STICKER]': '🎭 Sticker',
+    'Sent a image': '📷 Photo',
+    'Sent a video': '🎬 Video',
+    'Sent a audio': '🎵 Voice message',
+    'Sent a document': '📄 Document',
+    'Sent a sticker': '🎭 Sticker',
+  };
+
+  for (const [pattern, replacement] of Object.entries(mediaFormats)) {
+    if (text.includes(pattern) || text === pattern) {
+      return text.replace(pattern, replacement);
+    }
+  }
+
+  return text;
+};
+
 /* ---------- Component ---------- */
 export default function InboxPage() {
   const queryClient = useQueryClient();
@@ -530,7 +557,7 @@ export default function InboxPage() {
             </p>
             {contact.lastMessagePreview && (
               <p className={`text-xs truncate max-w-[180px] ${contact.unreadCount && contact.unreadCount > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400"}`}>
-                {contact.lastMessagePreview}
+                {formatPreviewText(contact.lastMessagePreview)}
               </p>
             )}
             {!contact.lastMessagePreview && contact.phone && (
