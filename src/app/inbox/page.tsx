@@ -61,6 +61,9 @@ interface Message {
   templateComponents?: any;
   error?: string | null;
   errorCode?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  messageType?: string | null;
 }
 
 interface ContactItemProps {
@@ -1057,9 +1060,48 @@ export default function InboxPage() {
                           </div>
                         ) : (
                           <div className="flex flex-col gap-0.5">
-                            <div className="message-text pr-2 leading-relaxed">
-                              {msg.text}
-                            </div>
+                            {/* Media Preview */}
+                            {msg.mediaUrl && (
+                              <div className="mb-2">
+                                {msg.messageType === 'image' || msg.mediaType?.startsWith('image/') ? (
+                                  <img
+                                    src={msg.mediaUrl}
+                                    alt="Sent image"
+                                    className="max-w-[280px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                    onClick={() => window.open(msg.mediaUrl!, '_blank')}
+                                  />
+                                ) : msg.messageType === 'video' || msg.mediaType?.startsWith('video/') ? (
+                                  <video
+                                    src={msg.mediaUrl}
+                                    controls
+                                    className="max-w-[280px] rounded-lg"
+                                  />
+                                ) : msg.messageType === 'audio' || msg.mediaType?.startsWith('audio/') ? (
+                                  <audio src={msg.mediaUrl} controls className="max-w-[280px]" />
+                                ) : (
+                                  <a
+                                    href={msg.mediaUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-3 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                  >
+                                    <FileText className="w-8 h-8 text-orange-500" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        Document
+                                      </p>
+                                      <p className="text-xs text-emerald-600">Click to download</p>
+                                    </div>
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            {/* Text/Caption */}
+                            {msg.text && !msg.text.startsWith('[') && (
+                              <div className="message-text pr-2 leading-relaxed">
+                                {msg.text}
+                              </div>
+                            )}
                             <div className="message-meta text-[10px] text-right flex items-center justify-end gap-1.5 opacity-60">
                               <span className="font-medium">
                                 {new Date(msg.createdAt).toLocaleTimeString([], {
