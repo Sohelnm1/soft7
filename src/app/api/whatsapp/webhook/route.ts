@@ -32,20 +32,93 @@ export async function POST(req: Request) {
     if (messages && messages.length > 0) {
       const msg = messages[0];
       const fromPhone = msg.from; // e.g. "9198xxxxxx"
-      const text = msg.text?.body ?? (msg?.interactive?.button_reply?.title ?? "") ?? null;
       const waMessageId = msg.id;
+
+      // Extract message type and content
+      const messageType = msg.type; // text, image, video, audio, document, sticker, etc.
+      let text = msg.text?.body ?? (msg?.interactive?.button_reply?.title ?? "") ?? null;
+      let mediaUrl: string | null = null;
+      let mimeType: string | null = null;
+      let mediaId: string | null = null;
+      let fileName: string | null = null;
+
+      // Handle media messages
+      if (messageType === 'image' && msg.image) {
+        mediaId = msg.image.id;
+        mimeType = msg.image.mime_type;
+        text = msg.image.caption || '[IMAGE]';
+      } else if (messageType === 'video' && msg.video) {
+        mediaId = msg.video.id;
+        mimeType = msg.video.mime_type;
+        text = msg.video.caption || '[VIDEO]';
+      } else if (messageType === 'audio' && msg.audio) {
+        mediaId = msg.audio.id;
+        mimeType = msg.audio.mime_type;
+        text = '[AUDIO]';
+      } else if (messageType === 'document' && msg.document) {
+        mediaId = msg.document.id;
+        mimeType = msg.document.mime_type;
+        fileName = msg.document.filename || 'document';
+        text = msg.document.caption || `[DOCUMENT: ${fileName}]`;
+      } else if (messageType === 'sticker' && msg.sticker) {
+        mediaId = msg.sticker.id;
+        mimeType = msg.sticker.mime_type;
+        text = '[STICKER]';
+      }
 
       const metadata = changes.metadata;
       const phoneNumberId = metadata?.phone_number_id;
 
       // Identify target user by looking up the WhatsApp account
       let targetUserId = Number(process.env.DEFAULT_USER_ID || 1);
+      let accessToken = process.env.WA_ACCESS_TOKEN;
+
       if (phoneNumberId) {
         const account = await prisma.whatsAppAccount.findFirst({
           where: { phoneNumberId: phoneNumberId }
         });
         if (account) {
           targetUserId = account.userId;
+          accessToken = account.accessToken || accessToken;
+        }
+      }
+
+      // Download media if present
+      if (mediaId && accessToken) {
+        try {
+          // Step 1: Get media URL from WhatsApp
+          const mediaInfoRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          const mediaInfo = await mediaInfoRes.json();
+
+          if (mediaInfo.url) {
+            // Step 2: Download media content
+            const mediaRes = await fetch(mediaInfo.url, {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            const mediaBuffer = Buffer.from(await mediaRes.arrayBuffer());
+
+            // Step 3: Save to local uploads
+            const fs = await import('fs');
+            const path = await import('path');
+            const uploadsDir = path.default.join(process.cwd(), 'public', 'uploads');
+            if (!fs.existsSync(uploadsDir)) {
+              fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+
+            // Generate filename
+            const ext = mimeType?.split('/')[1]?.split(';')[0] || 'bin';
+            const uniqueFileName = `${Date.now()}_incoming_${waMessageId.slice(-8)}.${ext}`;
+            const localFilePath = path.default.join(uploadsDir, uniqueFileName);
+
+            fs.writeFileSync(localFilePath, mediaBuffer);
+            mediaUrl = `/uploads/${uniqueFileName}`;
+
+            console.log(`[WA webhook] Media saved: ${mediaUrl}`);
+          }
+        } catch (mediaError) {
+          console.error('[WA webhook] Failed to download media:', mediaError);
         }
       }
 
@@ -110,7 +183,10 @@ export async function POST(req: Request) {
           seen: false,
           direction: "incoming",
           status: "delivered", // incoming messages are delivered
-          whatsappMessageId: waMessageId
+          whatsappMessageId: waMessageId,
+          messageType: messageType !== 'text' ? messageType : null,
+          mediaUrl: mediaUrl,
+          mediaType: mimeType,
         }
       });
 

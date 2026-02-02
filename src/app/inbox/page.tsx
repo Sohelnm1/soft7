@@ -1335,13 +1335,17 @@ export default function InboxPage() {
                     />
 
                     {/* Send Button / Mic */}
-                    {messageValue.trim() || selectedFile || audioBlob ? (
+                    {messageValue.trim() || selectedFile || audioBlob || selectedGalleryMedia ? (
                       <button
                         onClick={handleSend}
-                        disabled={sendMessageMutation.isPending}
-                        className="btn-primary w-9 h-9 flex items-center justify-center rounded-full disabled:opacity-50"
+                        disabled={sendMessageMutation.isPending || isSendingMedia}
+                        className="btn-primary w-9 h-9 flex items-center justify-center rounded-full disabled:opacity-50 relative"
                       >
-                        <Send size={18} className="text-white" />
+                        {sendMessageMutation.isPending || isSendingMedia ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send size={18} className="text-white" />
+                        )}
                       </button>
                     ) : (
                       <div className="relative group">

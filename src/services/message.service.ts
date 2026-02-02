@@ -147,12 +147,59 @@ export class MessageService {
         message.interactive?.button_reply?.title ||
         message.interactive?.list_reply?.title ||
         "Interactive Response";
-    } else if (["image", "video", "audio", "document"].includes(message.type)) {
+    } else if (["image", "video", "audio", "document", "sticker"].includes(message.type)) {
       const media = message[message.type];
-      mediaUrl = media.id; // WhatsApp internal ID
+      const waMediaId = media.id; // WhatsApp internal ID
       mediaType = message.type;
       caption = media.caption || null;
       text = caption || `Sent a ${message.type}`;
+
+      // Download media from WhatsApp and save locally
+      try {
+        const waAccount = await prisma.whatsAppAccount.findFirst({
+          where: { phoneNumberId },
+        });
+
+        if (waAccount?.accessToken) {
+          const accessToken = waAccount.accessToken;
+
+          // Step 1: Get media URL from WhatsApp
+          const mediaInfoRes = await fetch(`https://graph.facebook.com/v21.0/${waMediaId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          const mediaInfo = await mediaInfoRes.json();
+
+          if (mediaInfo.url) {
+            // Step 2: Download media content
+            const mediaRes = await fetch(mediaInfo.url, {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            const mediaBuffer = Buffer.from(await mediaRes.arrayBuffer());
+
+            // Step 3: Save to local uploads
+            const fs = require('fs');
+            const path = require('path');
+            const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+            if (!fs.existsSync(uploadsDir)) {
+              fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+
+            // Generate filename with proper extension
+            const mimeType = media.mime_type || mediaInfo.mime_type || 'application/octet-stream';
+            const ext = mimeType.split('/')[1]?.split(';')[0] || 'bin';
+            const uniqueFileName = `${Date.now()}_incoming_${message.id?.slice(-8) || 'msg'}.${ext}`;
+            const localFilePath = path.join(uploadsDir, uniqueFileName);
+
+            fs.writeFileSync(localFilePath, mediaBuffer);
+            mediaUrl = `/uploads/${uniqueFileName}`;
+
+            console.log(`[MessageService] Media saved: ${mediaUrl}`);
+          }
+        }
+      } catch (downloadError) {
+        console.error('[MessageService] Failed to download media:', downloadError);
+        // Keep mediaUrl as null if download fails - message will still be saved with text placeholder
+      }
     }
 
     const waAccount = await prisma.whatsAppAccount.findFirst({
