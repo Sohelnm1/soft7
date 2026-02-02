@@ -5,6 +5,7 @@ import FAQFlow from "@/components/FAQFlow";
 import { useRouter } from "next/navigation";
 import { TemplateSelectorModal } from "@/components/templates/TemplateSelectorModal";
 import { TemplateMessage } from "@/components/TemplateMessage";
+import { GalleryPickerModal } from "@/components/GalleryPickerModal";
 import "./inbox-page.css";
 
 import { useEffect, useState, useRef } from "react";
@@ -26,6 +27,7 @@ import {
   Bell,
   FileText,
   AlertCircle,
+  Image,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axiosInstance";
@@ -134,6 +136,11 @@ export default function InboxPage() {
 
   // ⭐ Template Selector state
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+
+  // ⭐ Gallery Picker state
+  const [showGalleryPicker, setShowGalleryPicker] = useState(false);
+  const [selectedGalleryMedia, setSelectedGalleryMedia] = useState<any>(null);
+  const [isSendingMedia, setIsSendingMedia] = useState(false);
 
   const { register, watch, reset } = useForm<MessageFormInputs>({
     defaultValues: { message: "" },
@@ -363,30 +370,58 @@ export default function InboxPage() {
   /* ---------- Send message ---------- */
   const handleSend = async () => {
     if (!selectedContact) return;
-    if (!messageValue.trim() && !selectedFile && !audioBlob) return;
+    if (!messageValue.trim() && !selectedFile && !audioBlob && !selectedGalleryMedia) return;
 
-    let messageText = messageValue.trim();
+    // Handle media sending (file, audio, or gallery)
+    if (selectedFile || audioBlob || selectedGalleryMedia) {
+      setIsSendingMedia(true);
+      try {
+        const formData = new FormData();
+        formData.append("contactId", selectedContact.id.toString());
 
-    if (selectedFile) {
-      messageText = messageText || `[File: ${selectedFile.name}]`;
-    } else if (audioBlob) {
-      messageText =
-        messageText || `[Voice Message: ${formatTime(recordingTime)}]`;
+        if (messageValue.trim()) {
+          formData.append("caption", messageValue.trim());
+        }
+
+        if (selectedGalleryMedia) {
+          // Send from gallery
+          formData.append("galleryMediaId", selectedGalleryMedia.id.toString());
+        } else if (selectedFile) {
+          // Upload new file
+          formData.append("file", selectedFile);
+        } else if (audioBlob) {
+          // Upload audio recording
+          const audioFile = new File([audioBlob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
+          formData.append("file", audioFile);
+        }
+
+        const response = await axiosInstance.post("/api/messages/send-media", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (response.data.success) {
+          toast.success("Media sent successfully!");
+          queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
+          queryClient.invalidateQueries({ queryKey: ["contacts"] });
+          reset();
+          setSelectedFile(null);
+          setAudioBlob(null);
+          setRecordingTime(0);
+          setSelectedGalleryMedia(null);
+        }
+      } catch (error: any) {
+        console.error("Failed to send media:", error);
+        toast.error(error?.response?.data?.error || "Failed to send media");
+      } finally {
+        setIsSendingMedia(false);
+      }
+      return;
     }
 
+    // Text-only message
     await sendMessageMutation.mutateAsync({
       contactId: selectedContact.id,
-      text: messageText,
-      file: selectedFile
-        ? {
-          name: selectedFile.name,
-          type: selectedFile.type,
-          size: selectedFile.size,
-        }
-        : null,
-      audio: audioBlob
-        ? { type: "audio/webm", size: audioBlob.size, duration: recordingTime }
-        : null,
+      text: messageValue.trim(),
     });
   };
 
@@ -1079,6 +1114,37 @@ export default function InboxPage() {
                       </div>
                     )}
 
+                    {/* Gallery Media Preview */}
+                    {selectedGalleryMedia && (
+                      <div className="mb-2 flex items-center gap-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-600">
+                        {selectedGalleryMedia.type?.startsWith('image/') ? (
+                          <img
+                            src={selectedGalleryMedia.url}
+                            alt={selectedGalleryMedia.name}
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-purple-100 dark:bg-purple-800 rounded flex items-center justify-center">
+                            <FileText className="w-6 h-6 text-purple-500" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {selectedGalleryMedia.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            From Gallery • {selectedGalleryMedia.size}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedGalleryMedia(null)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
                     {/* Audio Recording Preview */}
                     {audioBlob && (
                       <div className="mb-2 flex items-center gap-2 bg-emerald-50 dark:bg-gray-700 rounded-lg p-3 border border-emerald-200 dark:border-emerald-600">
@@ -1166,13 +1232,22 @@ export default function InboxPage() {
                           </button>
 
                           <button
-                            onClick={() => {
-                              fileInputRef.current?.click();
-                            }}
+                            onClick={() => fileInputRef.current?.click()}
                             className="w-full flex items-center gap-3 px-3 py-2 hover:bg-emerald-100 dark:hover:bg-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-200 transition-colors"
                           >
                             <span className="text-lg">📄</span>
                             <span>Document</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              setShowGalleryPicker(true);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-emerald-100 dark:hover:bg-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-200 transition-colors"
+                          >
+                            <Image size={18} className="text-purple-500" />
+                            <span>From Gallery</span>
                           </button>
 
                           <button
@@ -1280,6 +1355,16 @@ export default function InboxPage() {
           }}
         />
       )}
+
+      {/* Gallery Picker Modal */}
+      <GalleryPickerModal
+        isOpen={showGalleryPicker}
+        onClose={() => setShowGalleryPicker(false)}
+        onSelect={(media) => {
+          setSelectedGalleryMedia(media);
+          setShowGalleryPicker(false);
+        }}
+      />
     </div>
   );
 }

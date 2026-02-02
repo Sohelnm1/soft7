@@ -94,6 +94,186 @@ export async function sendWhatsAppMessage(
   return data;
 }
 
+// Validation constants for media types
+export const MEDIA_VALIDATION = {
+  image: {
+    extensions: ['.jpeg', '.jpg', '.png'],
+    mimeTypes: ['image/jpeg', 'image/png'],
+    maxSize: 5 * 1024 * 1024, // 5 MB
+  },
+  video: {
+    extensions: ['.mp4', '.3gp'],
+    mimeTypes: ['video/mp4', 'video/3gpp'],
+    maxSize: 16 * 1024 * 1024, // 16 MB
+  },
+  audio: {
+    extensions: ['.aac', '.amr', '.mp3', '.m4a', '.ogg'],
+    mimeTypes: ['audio/aac', 'audio/amr', 'audio/mpeg', 'audio/mp4', 'audio/ogg'],
+    maxSize: 16 * 1024 * 1024, // 16 MB
+  },
+  document: {
+    extensions: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'],
+    mimeTypes: [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain'
+    ],
+    maxSize: 100 * 1024 * 1024, // 100 MB
+  },
+};
+
+// Determine media type from MIME type
+export function getMediaTypeFromMime(mimeType: string): 'image' | 'video' | 'audio' | 'document' | null {
+  if (MEDIA_VALIDATION.image.mimeTypes.includes(mimeType)) return 'image';
+  if (MEDIA_VALIDATION.video.mimeTypes.includes(mimeType)) return 'video';
+  if (MEDIA_VALIDATION.audio.mimeTypes.includes(mimeType)) return 'audio';
+  if (MEDIA_VALIDATION.document.mimeTypes.includes(mimeType)) return 'document';
+  return null;
+}
+
+// Validate media file
+export function validateMedia(mimeType: string, size: number): { valid: boolean; error?: string } {
+  const mediaType = getMediaTypeFromMime(mimeType);
+
+  if (!mediaType) {
+    return { valid: false, error: `Unsupported file type: ${mimeType}` };
+  }
+
+  const validation = MEDIA_VALIDATION[mediaType];
+  if (size > validation.maxSize) {
+    const maxSizeMB = validation.maxSize / (1024 * 1024);
+    return { valid: false, error: `File too large. Maximum size for ${mediaType} is ${maxSizeMB}MB` };
+  }
+
+  return { valid: true };
+}
+
+// Upload media to WhatsApp and get media_id
+export async function uploadMediaToWhatsApp(
+  fileBuffer: Buffer,
+  mimeType: string,
+  fileName: string,
+  userId: number
+): Promise<string> {
+  const config = await prisma.whatsAppAccount.findFirst({
+    where: { userId, isActive: true },
+  });
+
+  if (!config) {
+    throw new Error(`No active WhatsApp account found for user ${userId}.`);
+  }
+
+  const phoneNumberId = config.phoneNumberId;
+  const accessToken = config.accessToken;
+  const apiVersion = config.apiVersion || "v22.0";
+
+  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/media`;
+
+  // Create form data for upload
+  const formData = new FormData();
+  formData.append('messaging_product', 'whatsapp');
+  formData.append('file', new Blob([new Uint8Array(fileBuffer)], { type: mimeType }), fileName);
+  formData.append('type', mimeType);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error("WhatsApp Media Upload error:", data);
+    throw new Error(`Failed to upload media: ${JSON.stringify(data)}`);
+  }
+
+  console.log("WhatsApp media uploaded:", data);
+  return data.id; // Return the media_id
+}
+
+// Send media message via WhatsApp
+export async function sendWhatsAppMedia(
+  to: string,
+  mediaType: 'image' | 'video' | 'audio' | 'document',
+  userId: number,
+  options: {
+    mediaId?: string;      // Use uploaded media ID
+    mediaUrl?: string;     // Or use a hosted URL (not recommended by Meta)
+    caption?: string;      // Caption for image/video/document
+    filename?: string;     // Filename for document
+  }
+) {
+  const config = await prisma.whatsAppAccount.findFirst({
+    where: { userId, isActive: true },
+  });
+
+  if (!config) {
+    throw new Error(`No active WhatsApp account found for user ${userId}.`);
+  }
+
+  const phoneNumberId = config.phoneNumberId;
+  const accessToken = config.accessToken;
+  const apiVersion = config.apiVersion || "v22.0";
+
+  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+
+  // Build media object based on type
+  const mediaObject: any = {};
+
+  if (options.mediaId) {
+    mediaObject.id = options.mediaId;
+  } else if (options.mediaUrl) {
+    mediaObject.link = options.mediaUrl;
+  } else {
+    throw new Error("Either mediaId or mediaUrl is required");
+  }
+
+  // Add caption for supported types
+  if (options.caption && ['image', 'video', 'document'].includes(mediaType)) {
+    mediaObject.caption = options.caption;
+  }
+
+  // Add filename for documents
+  if (options.filename && mediaType === 'document') {
+    mediaObject.filename = options.filename;
+  }
+
+  const payload: any = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: cleanPhoneNumber(to),
+    type: mediaType,
+    [mediaType]: mediaObject
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error("WhatsApp Media Send error:", data);
+    throw new Error(`Failed to send WhatsApp media: ${JSON.stringify(data)}`);
+  }
+
+  console.log("WhatsApp media sent:", data);
+  return data;
+}
+
 // ADD THIS NEW FUNCTION for sending template messages to ANY number
 export async function sendWhatsAppTemplate(
   to: string,
@@ -234,7 +414,7 @@ export async function sendWhatsAppTemplate(
           templateName,
           templateLanguage: languageCode,
           templateParams: parameters ? JSON.stringify(parameters) : undefined,
-          templateComponents: template?.components || null,
+          templateComponents: template?.components || undefined,
           campaignId: campaignId,
           sentBy: "campaign",
           // Store error details if failed

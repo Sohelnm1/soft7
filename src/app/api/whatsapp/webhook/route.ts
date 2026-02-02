@@ -35,29 +35,72 @@ export async function POST(req: Request) {
       const text = msg.text?.body ?? (msg?.interactive?.button_reply?.title ?? "") ?? null;
       const waMessageId = msg.id;
 
-      // find contact by phone (stored as digits). Try exact match, else try variations
-      const digits = fromPhone.replace(/\D/g, "");
-      let contact = await prisma.contact.findFirst({ where: { phone: { contains: digits } } });
+      const metadata = changes.metadata;
+      const phoneNumberId = metadata?.phone_number_id;
 
-      // If not found, create contact assigned to DEFAULT_USER_ID (env) so messages have owner
-      const defaultUserId = Number(process.env.DEFAULT_USER_ID || 1);
+      // Identify target user by looking up the WhatsApp account
+      let targetUserId = Number(process.env.DEFAULT_USER_ID || 1);
+      if (phoneNumberId) {
+        const account = await prisma.whatsAppAccount.findFirst({
+          where: { phoneNumberId: phoneNumberId }
+        });
+        if (account) {
+          targetUserId = account.userId;
+        }
+      }
+
+      // find contact by phone (stored as digits) for this specific user
+      const digits = fromPhone.replace(/\D/g, "");
+      let contact = await prisma.contact.findFirst({
+        where: {
+          phone: { contains: digits },
+          userId: targetUserId
+        }
+      });
+
+      // If not found, create contact assigned to the identified user
       if (!contact) {
+        // Try to get the profile name from the payload
+        const profileName = changes.contacts?.[0]?.profile?.name;
+
         contact = await prisma.contact.create({
           data: {
             phone: digits,
-            name: `WhatsApp ${digits.slice(-6)}`,
+            name: profileName || `WhatsApp ${digits.slice(-6)}`,
             source: "WhatsApp",
-            userId: defaultUserId,
-            wabaPhone: process.env.WA_PHONE_NUMBER_ID ?? null,
+            userId: targetUserId,
+            wabaPhone: phoneNumberId || process.env.WA_PHONE_NUMBER_ID || null,
           }
         });
       }
 
-      // create message under contact.userId
+      // Ensure a conversation exists for this user and phone
+      let conversation = await prisma.conversation.findUnique({
+        where: {
+          userId_phone: {
+            userId: targetUserId,
+            phone: digits
+          }
+        }
+      });
+
+      if (!conversation) {
+        conversation = await prisma.conversation.create({
+          data: {
+            userId: targetUserId,
+            phone: digits,
+            contactId: contact.id,
+            name: contact.name
+          }
+        });
+      }
+
+      // create message under contact.userId (which is now correctly targetUserId)
       await prisma.message.create({
         data: {
+          conversationId: conversation.id,
           contactId: contact.id,
-          userId: contact.userId,
+          userId: targetUserId,
           content: text ?? "",
           sentBy: "contact",
           from: digits,
@@ -65,13 +108,24 @@ export async function POST(req: Request) {
           senderId: msg.from,
           receiverId: String(contact.id),
           seen: false,
+          direction: "incoming",
+          status: "delivered", // incoming messages are delivered
+          whatsappMessageId: waMessageId
         }
       });
 
-      // Optionally update contact.updatedAt and last message summary
+      // Optionally update contact.updatedAt and conversation
       await prisma.contact.update({
         where: { id: contact.id },
         data: { updatedAt: new Date() },
+      });
+
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastInboundAt: new Date(),
+          updatedAt: new Date()
+        },
       });
 
       return NextResponse.json({ status: "stored" });
