@@ -317,7 +317,26 @@ export default function InboxPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+
+      // Try Meta-supported formats first, fallback to webm
+      let mimeType = 'audio/webm';
+      const supportedFormats = [
+        'audio/ogg;codecs=opus',  // Preferred: OGG with OPUS (Meta supports)
+        'audio/mp4',              // MP4 audio (M4A equivalent)
+        'audio/mpeg',             // MP3
+        'audio/webm;codecs=opus', // WebM with OPUS (needs server conversion)
+        'audio/webm',             // WebM default (needs server conversion)
+      ];
+
+      for (const format of supportedFormats) {
+        if (MediaRecorder.isTypeSupported(format)) {
+          mimeType = format;
+          console.log('Recording with format:', mimeType);
+          break;
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
 
       const audioChunks: Blob[] = [];
@@ -327,7 +346,8 @@ export default function InboxPage() {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        // Use the actual mimeType from recording
+        const audioBlob = new Blob(audioChunks, { type: mimeType });
         setAudioBlob(audioBlob);
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -1249,7 +1269,7 @@ export default function InboxPage() {
                       ref={fileInputRef}
                       type="file"
                       className="hidden"
-                      accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
                       onChange={handleFileSelect}
                     />
 
@@ -1266,19 +1286,12 @@ export default function InboxPage() {
                           <button
                             onClick={() => {
                               fileInputRef.current?.click();
+                              setShowAttachMenu(false);
                             }}
                             className="w-full flex items-center gap-3 px-3 py-2 hover:bg-emerald-100 dark:hover:bg-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-200 transition-colors"
                           >
-                            <span className="text-lg">📷</span>
-                            <span>Photos & Videos</span>
-                          </button>
-
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-emerald-100 dark:hover:bg-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-200 transition-colors"
-                          >
-                            <span className="text-lg">📄</span>
-                            <span>Document</span>
+                            <Paperclip size={18} className="text-emerald-500" />
+                            <span>Upload File</span>
                           </button>
 
                           <button
@@ -1290,14 +1303,6 @@ export default function InboxPage() {
                           >
                             <Image size={18} className="text-purple-500" />
                             <span>From Gallery</span>
-                          </button>
-
-                          <button
-                            onClick={() => setShowAttachMenu(false)}
-                            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-md text-sm text-red-600 dark:text-red-400 transition-colors"
-                          >
-                            <span className="text-lg">✕</span>
-                            <span>Cancel</span>
                           </button>
                         </div>
                       )}

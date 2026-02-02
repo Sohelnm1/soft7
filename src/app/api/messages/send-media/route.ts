@@ -99,8 +99,51 @@ export async function POST(req: NextRequest) {
             mimeType = file.type;
             fileName = file.name;
 
+            const arrayBuffer = await file.arrayBuffer();
+            let buffer = Buffer.from(arrayBuffer);
+
+            // Handle webm audio conversion (browser records in webm, Meta doesn't support it)
+            if (mimeType === 'audio/webm') {
+                try {
+                    const { exec } = await import('child_process');
+                    const { promisify } = await import('util');
+                    const execAsync = promisify(exec);
+
+                    // Save webm temporarily
+                    const tempWebmPath = path.join(process.cwd(), 'temp', `${Date.now()}_input.webm`);
+                    const tempOggPath = path.join(process.cwd(), 'temp', `${Date.now()}_output.ogg`);
+
+                    // Ensure temp directory exists
+                    const tempDir = path.join(process.cwd(), 'temp');
+                    if (!fs.existsSync(tempDir)) {
+                        fs.mkdirSync(tempDir, { recursive: true });
+                    }
+
+                    fs.writeFileSync(tempWebmPath, buffer);
+
+                    // Convert to OGG with OPUS codec (supported by Meta)
+                    await execAsync(`ffmpeg -i "${tempWebmPath}" -c:a libopus -b:a 64k "${tempOggPath}" -y`);
+
+                    // Read converted file
+                    buffer = fs.readFileSync(tempOggPath);
+                    mimeType = 'audio/ogg';
+                    fileName = fileName.replace('.webm', '.ogg');
+
+                    // Cleanup temp files
+                    fs.unlinkSync(tempWebmPath);
+                    fs.unlinkSync(tempOggPath);
+
+                    console.log('Audio converted from webm to ogg successfully');
+                } catch (conversionError) {
+                    console.error('Audio conversion failed:', conversionError);
+                    return NextResponse.json({
+                        error: 'Voice message format (webm) is not supported by WhatsApp. Please install ffmpeg for audio conversion, or upload a supported audio file (MP3, AAC, M4A, OGG).'
+                    }, { status: 400 });
+                }
+            }
+
             // Validate media
-            const validation = validateMedia(mimeType, file.size);
+            const validation = validateMedia(mimeType, buffer.length);
             if (!validation.valid) {
                 return NextResponse.json({ error: validation.error }, { status: 400 });
             }
@@ -122,8 +165,6 @@ export async function POST(req: NextRequest) {
             const uniqueFileName = `${timestamp}_${fileName}`;
             const localFilePath = path.join(uploadsDir, uniqueFileName);
 
-            const arrayBuffer = await file.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
             fs.writeFileSync(localFilePath, buffer);
 
             localMediaUrl = `/uploads/${uniqueFileName}`;
@@ -134,7 +175,7 @@ export async function POST(req: NextRequest) {
                     name: fileName,
                     fileName: uniqueFileName,
                     type: mimeType,
-                    size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+                    size: `${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
                     url: localMediaUrl,
                     userId: currentUser.id,
                 },

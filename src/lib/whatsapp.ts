@@ -110,6 +110,7 @@ export const MEDIA_VALIDATION = {
     extensions: ['.aac', '.amr', '.mp3', '.m4a', '.ogg'],
     mimeTypes: ['audio/aac', 'audio/amr', 'audio/mpeg', 'audio/mp4', 'audio/ogg'],
     maxSize: 16 * 1024 * 1024, // 16 MB
+    // Note: webm is recorded by browsers but not supported by Meta, requires conversion
   },
   document: {
     extensions: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'],
