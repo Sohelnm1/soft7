@@ -33,6 +33,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axiosInstance";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { useSocket } from "@/hooks/useSocket";
 
 /* ---------- Types ---------- */
 interface Contact {
@@ -64,6 +65,7 @@ interface Message {
   mediaUrl?: string | null;
   mediaType?: string | null;
   messageType?: string | null;
+  whatsappMessageId?: string | null;
 }
 
 interface ContactItemProps {
@@ -176,6 +178,33 @@ export default function InboxPage() {
     defaultValues: { message: "" },
   });
   const messageValue = watch("message");
+
+  // ⭐ Socket.IO for real-time updates
+  useSocket({
+    onNewMessage: (newMessage) => {
+      // If message belongs to currently selected contact, add it to the messages
+      if (selectedContact && newMessage.contactId === selectedContact.id) {
+        queryClient.setQueryData(
+          ["messages", selectedContact.id],
+          (oldMessages: Message[] = []) => [...oldMessages, newMessage]
+        );
+      }
+      // Refresh contacts list to update preview and unread count
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
+    onMessageStatusUpdate: ({ wamid, status }) => {
+      // Update message status in the current chat
+      if (selectedContact) {
+        queryClient.setQueryData(
+          ["messages", selectedContact.id],
+          (oldMessages: Message[] = []) =>
+            oldMessages.map((msg) =>
+              msg.whatsappMessageId === wamid ? { ...msg, status } : msg
+            )
+        );
+      }
+    },
+  });
 
   // Mark as Read Mutation
   const markAsReadMutation = useMutation({
