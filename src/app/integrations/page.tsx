@@ -98,8 +98,8 @@ const IntegrationCard = ({ integration }: { integration: Integration }) => {
       {/* Status Badge */}
       <div
         className={`absolute top-0 right-0 m-3 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${isConnected
-            ? "bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 ring-1 ring-green-200 dark:ring-green-800/60"
-            : "bg-gray-50 dark:bg-gray-900/60 text-gray-600 dark:text-gray-400 ring-1 ring-gray-200 dark:ring-gray-700"
+          ? "bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 ring-1 ring-green-200 dark:ring-green-800/60"
+          : "bg-gray-50 dark:bg-gray-900/60 text-gray-600 dark:text-gray-400 ring-1 ring-gray-200 dark:ring-gray-700"
           }`}
       >
         {isConnected ? <CheckCircle className="w-3 h-3" /> : <Plug className="w-3 h-3" />}
@@ -130,6 +130,13 @@ const IntegrationCard = ({ integration }: { integration: Integration }) => {
       {/* Action Buttons */}
       <div className="mt-auto flex gap-3">
         <button
+          onClick={() => {
+            if (integration.id === "1") {
+              // WhatsApp - open embedded signup
+              router.push("/signup/whatsapp");
+            }
+            // Other integrations can be handled here
+          }}
           className="flex-1 py-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all duration-200"
         >
           <ArrowRight className="w-4 h-4" />
@@ -255,8 +262,8 @@ export default function IntegrationsPage() {
         <button
           onClick={() => setActiveTab("all")}
           className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "all"
-              ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700"
-              : "bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700"
+            : "bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
         >
           All
@@ -264,8 +271,8 @@ export default function IntegrationsPage() {
         <button
           onClick={() => setActiveTab("featured")}
           className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "featured"
-              ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700"
-              : "bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700"
+            : "bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
         >
           Featured
@@ -273,8 +280,8 @@ export default function IntegrationsPage() {
         <button
           onClick={() => setActiveTab("flows")}
           className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "flows"
-              ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700"
-              : "bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700"
+            : "bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
         >
           Flows
