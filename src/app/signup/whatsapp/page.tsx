@@ -295,12 +295,6 @@ export default function WhatsAppSignupPage() {
               <li className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                 <span className="text-gray-700">
-                  Free credits to get started (100 credits)
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-700">
                   Send and receive messages through WhatsApp
                 </span>
               </li>
