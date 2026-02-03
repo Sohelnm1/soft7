@@ -182,6 +182,7 @@ export default function InboxPage() {
   // ⭐ Socket.IO for real-time updates
   useSocket({
     onNewMessage: (newMessage) => {
+      console.log("📩 Inbox: New message received", newMessage);
       // If message belongs to currently selected contact, add it to the messages
       if (selectedContact && newMessage.contactId === selectedContact.id) {
         queryClient.setQueryData(
@@ -193,15 +194,26 @@ export default function InboxPage() {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
     },
     onMessageStatusUpdate: ({ wamid, status }) => {
+      console.log("📊 Inbox: Status update received", { wamid, status, selectedContactId: selectedContact?.id });
+
       // Update message status in the current chat
       if (selectedContact) {
         queryClient.setQueryData(
           ["messages", selectedContact.id],
-          (oldMessages: Message[] = []) =>
-            oldMessages.map((msg) =>
+          (oldMessages: Message[] = []) => {
+            const updated = oldMessages.map((msg) =>
               msg.whatsappMessageId === wamid ? { ...msg, status } : msg
-            )
+            );
+            console.log("📊 Inbox: Updated messages cache, found match:",
+              oldMessages.some(m => m.whatsappMessageId === wamid));
+            return updated;
+          }
         );
+      }
+
+      // Also invalidate to ensure UI refreshes (fallback)
+      if (selectedContact) {
+        queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
       }
     },
   });
