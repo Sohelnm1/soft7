@@ -1,6 +1,7 @@
 // Path: Src/app/api/wa/webhook/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { publishSocketEvent } from "@/lib/socket-bridge";
 
 export async function GET(req: Request) {
   try {
@@ -169,7 +170,7 @@ export async function POST(req: Request) {
       }
 
       // create message under contact.userId (which is now correctly targetUserId)
-      await prisma.message.create({
+      const newMessage = await prisma.message.create({
         data: {
           conversationId: conversation.id,
           contactId: contact.id,
@@ -189,6 +190,24 @@ export async function POST(req: Request) {
           mediaType: mimeType,
         }
       });
+
+      // Emit socket event for real-time update via Redis bridge
+      await publishSocketEvent("new_message", {
+        id: newMessage.id,
+        contactId: contact.id,
+        userId: targetUserId,
+        text: text ?? "",
+        direction: "incoming",
+        status: "delivered",
+        createdAt: newMessage.createdAt.toISOString(),
+        whatsappMessageId: waMessageId,
+        messageType: messageType !== 'text' ? messageType : null,
+        mediaUrl: mediaUrl,
+        mediaType: mimeType,
+        contactName: contact.name,
+        contactPhone: digits,
+      });
+      console.log("[WA webhook] 📤 Published new_message event for contact:", contact.id);
 
       // Optionally update contact.updatedAt and conversation
       await prisma.contact.update({
@@ -247,6 +266,10 @@ export async function POST(req: Request) {
           });
 
           console.log(`[WA webhook] ✅ Updated message ${message.id} status: ${message.status} -> ${newStatus}`);
+
+          // Emit socket event for real-time status update via Redis bridge
+          await publishSocketEvent("message_status_update", { wamid: waMessageId, status: newStatus });
+          console.log(`[WA webhook] 📤 Published message_status_update: ${waMessageId} -> ${newStatus}`);
 
           // Update campaign stats if this message is part of a campaign
           if (message.campaignId) {

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 const { prisma } = require("../lib/prisma.worker.cjs");
 import { WalletService } from "./wallet.service";
+import { publishSocketEvent } from "../lib/socket-bridge";
 
 /**
  * Normalizes a phone number by removing non-numeric characters
@@ -10,14 +11,6 @@ function normalizePhone(phone: string): string {
   if (!phone) return phone;
   // Remove all non-digits
   return phone.replace(/\D/g, "");
-}
-
-// Lazy-load socket only if available (Next.js runtime)
-let getSocketIO: any = null;
-try {
-  getSocketIO = require("../lib/socket").getIO;
-} catch (e) {
-  // BullMQ Worker environment
 }
 
 export class MessageService {
@@ -115,11 +108,8 @@ export class MessageService {
         }
       }
 
-      // Emit Socket update
-      const io = getSocketIO?.();
-      if (io) {
-        io.emit("message_status_update", { wamid, status });
-      }
+      // Emit Socket update via Redis bridge
+      await publishSocketEvent("message_status_update", { wamid, status });
 
       return updatedMsg;
     });
@@ -315,10 +305,21 @@ export class MessageService {
       },
     });
 
-    const io = getSocketIO?.();
-    if (io) {
-      io.emit("new_message", savedMsg);
-    }
+    // Emit via Redis bridge for real-time update
+    await publishSocketEvent("new_message", {
+      id: savedMsg.id,
+      contactId: contact.id,
+      userId,
+      text,
+      direction: "incoming",
+      status: "sent",
+      createdAt: savedMsg.createdAt?.toISOString?.() || new Date().toISOString(),
+      whatsappMessageId: message.id,
+      mediaUrl,
+      mediaType,
+      contactName: name,
+      contactPhone: from,
+    });
 
     return savedMsg;
   }

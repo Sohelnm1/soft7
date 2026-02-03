@@ -1,6 +1,7 @@
 import { createServer } from "http";
 import next from "next";
 import { initSocket } from "./src/lib/socket";
+import { initSocketBridge } from "./src/lib/socket-bridge";
 
 const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
@@ -15,8 +16,12 @@ app.prepare().then(() => {
   const io = initSocket(server);
   console.log("🔌 Socket.IO initialized");
 
+  // Initialize Redis bridge for worker -> socket communication
+  initSocketBridge(io);
+
   server.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
     console.log(`📡 Socket.IO ready for connections`);
   });
 });
+
