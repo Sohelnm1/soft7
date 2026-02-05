@@ -139,7 +139,7 @@ export class TemplateService {
                 errorMessage: errorData?.message,
                 error: errorData ? JSON.stringify(errorData) : undefined,
                 reminderId: reminderId
-            }
+            } as any
         });
 
         // 6. Wallet Deduction
