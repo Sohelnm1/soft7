@@ -2,6 +2,7 @@ import { createServer } from "http";
 import next from "next";
 import { initSocket } from "./src/lib/socket";
 import { initSocketBridge } from "./src/lib/socket-bridge";
+import { initReminderCron } from "./src/jobs/reminderCron";
 
 const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
@@ -20,7 +21,6 @@ app.prepare().then(() => {
   initSocketBridge(io);
 
   // Initialize background jobs
-  const { initReminderCron } = require("./src/jobs/reminderCron.ts");
   initReminderCron();
 
   server.listen(port, () => {
