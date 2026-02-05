@@ -91,9 +91,9 @@ export class TemplateService {
         const whatsappMessageId = data.messages?.[0]?.id;
 
         // 5. Create Unified Message Record
-        let conversationId = `conv_${userId}_${contact.id}`;
+        let actualConversationId: string | undefined;
         try {
-            await (prisma.conversation as any).upsert({
+            const conv = await (prisma.conversation as any).upsert({
                 where: {
                     userId_phone: {
                         userId: userId,
@@ -112,13 +112,14 @@ export class TemplateService {
                     lastMessageAt: new Date()
                 }
             });
+            actualConversationId = conv.id;
         } catch (convErr) {
             console.error("[TemplateService] Conversation upsert failed:", convErr);
         }
 
         const messageRecord = await prisma.message.create({
             data: {
-                conversationId,
+                conversationId: actualConversationId || `fail_${Date.now()}`,
                 contactId: contact.id,
                 userId: userId,
                 messageType: "template",
