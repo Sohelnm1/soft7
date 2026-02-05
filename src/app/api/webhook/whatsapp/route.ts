@@ -215,28 +215,7 @@ async function handleEmbeddedSignupWebhook(event: any) {
         },
       });
 
-      // Allocate initial credits
-      const INITIAL_CREDITS = parseFloat(
-        process.env.EMBEDDED_SIGNUP_INITIAL_CREDITS || "100",
-      );
-      if (INITIAL_CREDITS > 0) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            walletBalance: { increment: INITIAL_CREDITS },
-          },
-        });
-
-        // Record transaction
-        await prisma.walletTransaction.create({
-          data: {
-            userId,
-            amount: INITIAL_CREDITS,
-            type: "TOPUP",
-            messageId: `embedded_signup_webhook_${account.id}_${Date.now()}`,
-          },
-        });
-      }
+      // Initial credits allocation removed at user request.
 
       console.log(
         `✅ Successfully processed embedded signup for user ${userId}, account ${account.id}`,

@@ -63,6 +63,8 @@ model Conversation {
   name          String?
   userId        Int
   contactId     Int
+  lastMessage   String?
+  lastMessageAt DateTime?
   lastInboundAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -116,7 +118,9 @@ model Message {
   sentBy       String?
   sentById     Int?
   campaignId   String?
-  campaign     Campaign?     @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  campaign     Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  reminderId   Int?
+  reminder     ContactReminder? @relation(fields: [reminderId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,6 +129,7 @@ model Message {
   @@index([contactId])
   @@index([userId])
   @@index([campaignId])
+  @@index([reminderId])
   @@index([createdAt])
   @@map("whatsapp_messages")
 }
@@ -458,7 +463,13 @@ model ContactReminder {
   id           Int      @id @default(autoincrement())
   userId       Int
   contactId    Int
-  message      String
+  
+  // Template Details
+  templateName String?
+  language     String?
+  variables    Json?    // Stores the values for template variables
+  
+  message      String?  // Keep for legacy or internal notes
   scheduleType String
   onDate       String?
   fromTime     String?
@@ -471,8 +482,10 @@ model ContactReminder {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   delivered    Boolean  @default(false)
+  
   contact      Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     Message[]
 
   @@index([contactId])
   @@index([onDate])

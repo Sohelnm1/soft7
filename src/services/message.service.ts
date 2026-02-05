@@ -28,6 +28,7 @@ export class MessageService {
           id: true,
           userId: true,
           campaignId: true,
+          reminderId: true,
           status: true,
           ...({ deliveredAt: true } as any),
         },
@@ -105,6 +106,16 @@ export class MessageService {
             `[MessageService] Wallet deduction failed but continuing status update:`,
             e.message,
           );
+        }
+      }
+
+      // 5. Update Reminder Status if applicable
+      if ((message as any).reminderId) {
+        if (status === "delivered" || status === "read") {
+          await tx.contactReminder.update({
+            where: { id: (message as any).reminderId },
+            data: { delivered: true }
+          });
         }
       }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { TemplateService } from "@/services/template.service";
 
 export async function GET() {
   const now = new Date();
@@ -12,6 +13,7 @@ export async function GET() {
     where: {
       onDate: currentDate,
       delivered: false,
+      triggered: false,
       fromTime: { lte: currentTime },
       toTime: { gte: currentTime }
     },
@@ -21,33 +23,49 @@ export async function GET() {
     }
   });
 
+  const results = [];
+
   for (const reminder of dueReminders) {
-    // ✅ CREATE MESSAGE EXACTLY LIKE USER SENT MESSAGE
-    await prisma.message.create({
-      data: {
-        contactId: reminder.contactId,
+    try {
+      const r = reminder as any;
+      if (!r.templateName) {
+        console.warn(`[ReminderRun] Reminder ${reminder.id} has no templateName, skipping.`);
+        continue;
+      }
+
+      await TemplateService.sendTemplate({
         userId: reminder.userId,
+        contactId: reminder.contactId,
+        templateName: r.templateName,
+        language: r.language || "en",
+        variables: r.variables as Record<string, string> || {},
+        reminderId: reminder.id
+      });
 
-        content: reminder.message,
-        text: reminder.message,
+      // Mark as triggered so we don't try again if it fails Meta send
+      // (Status tracking will handle the rest)
+      await prisma.contactReminder.update({
+        where: { id: reminder.id },
+        data: { triggered: true }
+      });
 
-        sentBy: "me",         // ✅ RIGHT SIDE
-        direction: "outgoing",
-        status: "sent",
-        sentAt: new Date()
-      },
-    });
+      results.push({ id: reminder.id, status: "success" });
+    } catch (err: any) {
+      console.error(`[ReminderRun] Failed to send reminder ${reminder.id}:`, err.message);
+      results.push({ id: reminder.id, status: "error", message: err.message });
 
-    // Mark as delivered
-    await prisma.contactReminder.update({
-      where: { id: reminder.id },
-      data: { delivered: true }
-    });
+      // Still mark as triggered to avoid infinite loops on bad templates
+      await prisma.contactReminder.update({
+        where: { id: reminder.id },
+        data: { triggered: true }
+      });
+    }
   }
 
   return NextResponse.json({
     status: "success",
-    sent: dueReminders.length,
+    processed: dueReminders.length,
+    results,
     timestamp: now
   });
 }

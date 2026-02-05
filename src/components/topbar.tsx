@@ -45,22 +45,22 @@ interface Reminder {
 type SearchResult = {
   id: string | number;
   type:
-    | "contact"
-    | "page"
-    | "campaign"
-    | "tag"
-    | "lead"
-    | "media"
-    | "flow"
-    | "chatbot"
-    | "ai-assistant"
-    | "webhook"
-    | "column"
-    | "opt-keyword"
-    | "whatsapp-flow"
-    | "faq-bot"
-    | "reminder"
-    | "team-member";
+  | "contact"
+  | "page"
+  | "campaign"
+  | "tag"
+  | "lead"
+  | "media"
+  | "flow"
+  | "chatbot"
+  | "ai-assistant"
+  | "webhook"
+  | "column"
+  | "opt-keyword"
+  | "whatsapp-flow"
+  | "faq-bot"
+  | "reminder"
+  | "team-member";
   title: string;
   subtitle?: string;
   url: string;
@@ -121,7 +121,7 @@ const getAudioContext = (): AudioContext => {
     if (!AudioCtx) throw new Error("Web Audio API not supported");
     audioCtx = new AudioCtx();
     const resumeOnInteraction = () => {
-      audioCtx?.resume().catch(() => {});
+      audioCtx?.resume().catch(() => { });
       document.removeEventListener("click", resumeOnInteraction);
       document.removeEventListener("touchstart", resumeOnInteraction);
     };
@@ -140,6 +140,7 @@ export function Topbar() {
     id: string;
     name: string;
     image?: string;
+    walletBalance?: number;
   }>({ id: "", name: "" });
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [openReminders, setOpenReminders] = useState(false);
@@ -513,90 +514,101 @@ export function Topbar() {
           </nav>
         </div>
 
-      {/* MIDDLE: Search */}
-<div
-  className="hidden md:flex flex-1 max-w-xl mx-6 relative"
-  ref={searchRef}
->
-  <div
-    className="relative w-full flex items-center border border-gray-300 dark:border-gray-600
+        {/* MIDDLE: Search */}
+        <div
+          className="hidden md:flex flex-1 max-w-xl mx-6 relative"
+          ref={searchRef}
+        >
+          <div
+            className="relative w-full flex items-center border border-gray-300 dark:border-gray-600
                rounded-xl bg-white dark:bg-gray-800 shadow-inner
                focus-within:ring-2 focus-within:ring-indigo-400 transition"
-  >
-    <Search className="absolute left-4 text-gray-400 h-5 w-5 pointer-events-none" />
+          >
+            <Search className="absolute left-4 text-gray-400 h-5 w-5 pointer-events-none" />
 
-    <input
-      type="text"
-      value={searchQuery}
-      placeholder="Search leads, campaigns, contacts, or pages..."
-      onChange={(e) => {
-        setSearchQuery(e.target.value);
-        setShowSearchResults(true);
-      }}
-      onFocus={() => setShowSearchResults(true)}
-      style={{ paddingLeft: "3rem" }}
-      className="w-full px-3 py-2 text-sm bg-transparent
+            <input
+              type="text"
+              value={searchQuery}
+              placeholder="Search leads, campaigns, contacts, or pages..."
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSearchResults(true);
+              }}
+              onFocus={() => setShowSearchResults(true)}
+              style={{ paddingLeft: "3rem" }}
+              className="w-full px-3 py-2 text-sm bg-transparent
                  text-gray-800 dark:text-gray-100 outline-none"
-    />
+            />
 
-    {isSearching && (
-      <div className="mr-4">
-        <div className="animate-spin h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full" />
-      </div>
-    )}
-  </div>
-
-  {/* 🔽 SEARCH RESULTS DROPDOWN */}
-  {showSearchResults && searchResults.length > 0 && (
-    <div
-      className="absolute top-full mt-2 w-full bg-white dark:bg-gray-900
-                 border border-gray-200 dark:border-gray-700
-                 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto"
-    >
-      {searchResults.map((item) => (
-        <button
-          key={`${item.type}-${item.id}`}
-          onClick={() => handleResultClick(item)}
-          className="w-full flex items-center gap-3 px-4 py-3
-                     text-left hover:bg-gray-100 dark:hover:bg-gray-800
-                     transition"
-        >
-          <span className="shrink-0">
-            {getResultIcon(item.type)}
-          </span>
-
-          <div className="flex flex-col">
-            <span className="font-medium text-gray-800 dark:text-gray-100">
-              {item.title}
-            </span>
-
-            {item.subtitle && (
-              <span className="text-xs text-gray-500">
-                {item.subtitle}
-              </span>
+            {isSearching && (
+              <div className="mr-4">
+                <div className="animate-spin h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full" />
+              </div>
             )}
           </div>
-        </button>
-      ))}
-    </div>
-  )}
-</div>
+
+          {/* 🔽 SEARCH RESULTS DROPDOWN */}
+          {showSearchResults && searchResults.length > 0 && (
+            <div
+              className="absolute top-full mt-2 w-full bg-white dark:bg-gray-900
+                 border border-gray-200 dark:border-gray-700
+                 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto"
+            >
+              {searchResults.map((item) => (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  onClick={() => handleResultClick(item)}
+                  className="w-full flex items-center gap-3 px-4 py-3
+                     text-left hover:bg-gray-100 dark:hover:bg-gray-800
+                     transition"
+                >
+                  <span className="shrink-0">
+                    {getResultIcon(item.type)}
+                  </span>
+
+                  <div className="flex flex-col">
+                    <span className="font-medium text-gray-800 dark:text-gray-100">
+                      {item.title}
+                    </span>
+
+                    {item.subtitle && (
+                      <span className="text-xs text-gray-500">
+                        {item.subtitle}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* RIGHT SIDE */}
         <div className="flex items-center gap-3">
           {/* Theme Toggle */}
           <ThemeToggle />
-        
+
+          {/* Wallet Balance */}
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-lg">
+            <CreditCard className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <div className="flex flex-col items-start leading-none">
+              <span className="text-[10px] uppercase font-bold text-green-600/70 dark:text-green-400/70 tracking-tight">Credits</span>
+              <span className="text-sm font-bold text-green-700 dark:text-green-300">
+                ₹{userData.walletBalance?.toFixed(2) || "0.00"}
+              </span>
+            </div>
+          </div>
+
           {/* Subscription Button */}
           <div className="relative group">
-  <button
-    onClick={() => setShowSubscriptionPanel(true)}
-    className="relative flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gradient-to-br hover:from-yellow-400 hover:to-orange-500 hover:text-white transition-all duration-300"
-    aria-label="Subscription"
-    title="Subscription"
-  >
-    <Crown className="h-5 w-5 text-yellow-500 group-hover:text-white dark:text-yellow-400 transition-colors" />
-  </button>
+            <button
+              onClick={() => setShowSubscriptionPanel(true)}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gradient-to-br hover:from-yellow-400 hover:to-orange-500 hover:text-white transition-all duration-300"
+              aria-label="Subscription"
+              title="Subscription"
+            >
+              <Crown className="h-5 w-5 text-yellow-500 group-hover:text-white dark:text-yellow-400 transition-colors" />
+            </button>
 
           </div>
 
@@ -650,22 +662,20 @@ export function Topbar() {
                   <div className="flex w-full rounded-lg overflow-hidden text-sm font-medium">
                     <button
                       onClick={() => setActiveTab("today")}
-                      className={`flex-1 py-1.5 ${
-                        activeTab === "today"
-                          ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner border dark:border-gray-600"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-500"
-                      }`}
+                      className={`flex-1 py-1.5 ${activeTab === "today"
+                        ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner border dark:border-gray-600"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                        }`}
                     >
                       Today
                     </button>
 
                     <button
                       onClick={() => setActiveTab("tomorrow")}
-                      className={`flex-1 py-1.5 ${
-                        activeTab === "tomorrow"
-                          ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner border dark:border-gray-600"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-500"
-                      }`}
+                      className={`flex-1 py-1.5 ${activeTab === "tomorrow"
+                        ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner border dark:border-gray-600"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                        }`}
                     >
                       Tomorrow
                     </button>
@@ -682,15 +692,15 @@ export function Topbar() {
                         </p>
                       )
                       : remindersToday.map((r, i) => (
-                          <ReminderItem key={i} reminder={r} />
-                        ))
+                        <ReminderItem key={i} reminder={r} />
+                      ))
                     : remindersTomorrow.length === 0
-                    ? (
-                      <p className="text-center text-gray-400 dark:text-gray-500 py-4">
-                        No reminders for tomorrow
-                      </p>
-                    )
-                    : remindersTomorrow.map((r, i) => (
+                      ? (
+                        <p className="text-center text-gray-400 dark:text-gray-500 py-4">
+                          No reminders for tomorrow
+                        </p>
+                      )
+                      : remindersTomorrow.map((r, i) => (
                         <ReminderItem key={i} reminder={r} />
                       ))}
                 </div>
@@ -743,17 +753,17 @@ export function Topbar() {
                   <CreditCard size={16} /> Billing
                 </Link>
                 <button
-                   onClick={async () => {
-                     await fetch("/api/auth/logout", {
-                       method: "POST",
-                         });
+                  onClick={async () => {
+                    await fetch("/api/auth/logout", {
+                      method: "POST",
+                    });
 
-                         router.push("/"); // or /login
-                         }}
-                   className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40"
-                           >
-                     <LogOut size={16} /> Logout
-                         </button>
+                    router.push("/"); // or /login
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40"
+                >
+                  <LogOut size={16} /> Logout
+                </button>
               </div>
             )}
           </div>

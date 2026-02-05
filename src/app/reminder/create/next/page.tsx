@@ -23,23 +23,25 @@ export default function CreateReminderStep2() {
 
   const [draft, setDraft] = useState<{
     recipients: Recipient[];
-    message: string;
+    templateName?: string;
+    language?: string;
+    variables?: Record<string, string>;
     scheduleType?: "one" | "repeated" | "yourwish";
     date?: string;
     time?: string;
   }>(() => {
     try {
       const raw = localStorage.getItem("draftReminder");
-      return raw ? JSON.parse(raw) : { recipients: [], message: "" };
+      return raw ? JSON.parse(raw) : { recipients: [] };
     } catch {
-      return { recipients: [], message: "" };
+      return { recipients: [] };
     }
   });
 
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!draft.recipients || draft.recipients.length === 0 || !draft.message) {
+    if (!draft.recipients || draft.recipients.length === 0 || !draft.templateName) {
       setTimeout(() => router.push("/reminder/create"), 200);
     }
   }, [draft, router]);
@@ -175,7 +177,9 @@ export default function CreateReminderStep2() {
 
       const reminderData = {
         recipients: draft.recipients || [],
-        message: draft.message || "",
+        templateName: draft.templateName,
+        language: draft.language,
+        variables: draft.variables,
         scheduleType: activeTab,
         allDay: activeTab === "one" ? allDay : false,
         onDate,
@@ -251,19 +255,17 @@ export default function CreateReminderStep2() {
               <button
                 key={option.id}
                 onClick={() => setActiveTab(option.id)}
-                className={`relative p-3 rounded-lg transition-all duration-300 text-left animate-cardFadeIn hover:scale-105 hover:-translate-y-1 ${
-                  isActive ? "shadow-lg" : "hover:shadow-md"
-                }`}
+                className={`relative p-3 rounded-lg transition-all duration-300 text-left animate-cardFadeIn hover:scale-105 hover:-translate-y-1 ${isActive ? "shadow-lg" : "hover:shadow-md"
+                  }`}
                 style={{
                   background: isActive
                     ? "rgba(255, 255, 255, 0.95)"
                     : "rgba(255, 255, 255, 0.6)",
                   backdropFilter: "blur(20px)",
-                  border: `2px solid ${
-                    isActive
+                  border: `2px solid ${isActive
                       ? "rgba(16, 185, 129, 0.3)"
                       : "rgba(16, 185, 129, 0.15)"
-                  }`,
+                    }`,
                   animationDelay: `${index * 0.1}s`,
                 }}
               >
@@ -366,24 +368,21 @@ export default function CreateReminderStep2() {
                   <button
                     onClick={() => setAllDay(!allDay)}
                     disabled={saving}
-                    className={`relative w-11 h-6 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      allDay
+                    className={`relative w-11 h-6 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${allDay
                         ? "bg-emerald-500"
                         : "bg-gray-200 dark:bg-gray-700"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`absolute top-0.5 ${
-                        allDay ? "left-5.5" : "left-0.5"
-                      } w-5 h-5 rounded-full bg-white shadow-lg transition-all duration-300`}
+                      className={`absolute top-0.5 ${allDay ? "left-5.5" : "left-0.5"
+                        } w-5 h-5 rounded-full bg-white shadow-lg transition-all duration-300`}
                     />
                   </button>
                   <span
-                    className={`text-xs font-bold ${
-                      allDay
+                    className={`text-xs font-bold ${allDay
                         ? "text-emerald-600 dark:text-emerald-400"
                         : "text-gray-500 dark:text-gray-400"
-                    }`}
+                      }`}
                   >
                     {allDay ? "ON" : "OFF"}
                   </span>
@@ -473,11 +472,10 @@ export default function CreateReminderStep2() {
                         key={idx}
                         onClick={() => toggleDay(daysFullName[idx])}
                         disabled={saving}
-                        className={`w-8 h-8 rounded-full text-xs font-semibold transition-all duration-300 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed ${
-                          selectedDays.includes(daysFullName[idx])
+                        className={`w-8 h-8 rounded-full text-xs font-semibold transition-all duration-300 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed ${selectedDays.includes(daysFullName[idx])
                             ? "bg-emerald-500 text-white shadow-md"
                             : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
+                          }`}
                       >
                         {day}
                       </button>
@@ -590,21 +588,20 @@ export default function CreateReminderStep2() {
                       day.isCurrentMonth && handleDateClick(day.date)
                     }
                     disabled={!day.isCurrentMonth || saving}
-                    className={`aspect-square rounded-lg flex items-center justify-center text-xs font-medium transition-all duration-300 hover:scale-110 ${
-                      isSelected
+                    className={`aspect-square rounded-lg flex items-center justify-center text-xs font-medium transition-all duration-300 hover:scale-110 ${isSelected
                         ? "text-white shadow-lg scale-105"
                         : isToday
-                        ? "bg-emerald-100 text-emerald-600 border border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-600"
-                        : day.isCurrentMonth
-                        ? "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
-                        : "text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                    }`}
+                          ? "bg-emerald-100 text-emerald-600 border border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-600"
+                          : day.isCurrentMonth
+                            ? "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+                            : "text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                      }`}
                     style={
                       isSelected
                         ? {
-                            background:
-                              "linear-gradient(135deg, #10b981, #059669)",
-                          }
+                          background:
+                            "linear-gradient(135deg, #10b981, #059669)",
+                        }
                         : {}
                     }
                   >
@@ -620,17 +617,16 @@ export default function CreateReminderStep2() {
         <button
           onClick={handleSave}
           disabled={!onDate || saving}
-          className={`fixed bottom-5 right-5 z-50 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-300 shadow-lg ${
-            onDate && !saving
+          className={`fixed bottom-5 right-5 z-50 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all duration-300 shadow-lg ${onDate && !saving
               ? "text-white hover:shadow-xl hover:scale-105"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
+            }`}
           style={
             onDate && !saving
               ? {
-                  background: "linear-gradient(135deg, #10b981, #059669)",
-                  boxShadow: "0 8px 24px rgba(16, 185, 129, 0.4)",
-                }
+                background: "linear-gradient(135deg, #10b981, #059669)",
+                boxShadow: "0 8px 24px rgba(16, 185, 129, 0.4)",
+              }
               : {}
           }
         >

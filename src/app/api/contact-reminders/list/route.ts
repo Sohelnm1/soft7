@@ -21,7 +21,7 @@ async function getCurrentUser() {
 export async function GET(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
-    
+
     if (!currentUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -49,8 +49,11 @@ export async function GET(req: NextRequest) {
     });
 
     // Transform to match the expected format
-    const formattedReminders = reminders.map((reminder) => ({
+    const formattedReminders = reminders.map((reminder: any) => ({
       id: reminder.id,
+      templateName: reminder.templateName,
+      language: reminder.language,
+      variables: reminder.variables,
       message: reminder.message,
       scheduleType: reminder.scheduleType,
       onDate: reminder.onDate,
@@ -61,6 +64,8 @@ export async function GET(req: NextRequest) {
       repeatUnit: reminder.repeatUnit,
       selectedDays: reminder.selectedDays,
       createdAt: reminder.createdAt,
+      delivered: reminder.delivered,
+      triggered: reminder.triggered,
       contactId: reminder.contact?.id,
       contactName: reminder.contact?.name,
       contactPhone: reminder.contact?.phone,
@@ -79,7 +84,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
-    
+
     if (!currentUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -90,7 +95,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       recipients,
-      message,
+      templateName,
+      language,
+      variables,
       scheduleType,
       onDate,
       fromTime,
@@ -108,23 +115,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!message || !message.trim()) {
-      return NextResponse.json(
-        { error: "Message is required" },
-        { status: 400 }
-      );
-    }
-
     const createdReminders = [];
 
     for (const recipient of recipients) {
       if (recipient.type === "contact" || recipient.type === "one") {
-        // Create reminder for individual contact using Prisma
         const reminder = await prisma.contactReminder.create({
           data: {
             userId: currentUser.id,
             contactId: recipient.id,
-            message,
+            templateName: templateName || null,
+            language: language || null,
+            variables: variables || null,
             scheduleType,
             onDate: onDate || null,
             fromTime: allDay ? null : fromTime || null,
@@ -141,7 +142,6 @@ export async function POST(req: NextRequest) {
           contactId: recipient.id,
         });
       } else if (recipient.type === "tag") {
-        // Fetch all contacts with this tag
         const contactsWithTag = await prisma.contact.findMany({
           where: {
             userId: currentUser.id,
@@ -158,13 +158,14 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Create reminders for all contacts with this tag
         for (const contact of contactsWithTag) {
           const reminder = await prisma.contactReminder.create({
             data: {
               userId: currentUser.id,
               contactId: contact.id,
-              message,
+              templateName: templateName || null,
+              language: language || null,
+              variables: variables || null,
               scheduleType,
               onDate: onDate || null,
               fromTime: allDay ? null : fromTime || null,
@@ -181,9 +182,6 @@ export async function POST(req: NextRequest) {
             contactId: contact.id,
           });
         }
-      } else if (recipient.type === "group") {
-        // TODO: Implement group logic when groups table is ready
-        console.log("Group reminders not yet implemented");
       }
     }
 

@@ -42,7 +42,7 @@ export default function ReminderContactsPage() {
   const fetchReminders = async () => {
     try {
       setLoading(true);
-      
+
       const response = await fetch("/api/contact-reminders/list");
 
       if (!response.ok) {
@@ -54,24 +54,26 @@ export default function ReminderContactsPage() {
       }
 
       const data = await response.json();
-      
+
       // Transform data to match component structure
       const transformedData = data.map((reminder: any) => ({
         id: reminder.id,
         name: reminder.contactName || "Unknown",
         date: reminder.onDate || new Date().toISOString().split('T')[0],
         time: reminder.allDay ? "All Day" : `${reminder.fromTime || "00:00"} - ${reminder.toTime || "00:00"}`,
-        reminderName: reminder.message?.substring(0, 30) + (reminder.message?.length > 30 ? "..." : ""),
+        reminderName: reminder.templateName || "Custom Reminder",
         scheduleType: reminder.scheduleType,
-        contactPhone: reminder.contactPhone
+        contactPhone: reminder.contactPhone,
+        delivered: reminder.delivered,
+        triggered: reminder.triggered
       }));
 
       setContacts(transformedData);
-      
+
       // Calculate stats
       const now = new Date();
       const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      
+
       const thisWeekCount = transformedData.filter((r: any) => {
         const reminderDate = new Date(r.date);
         return reminderDate >= now && reminderDate <= weekFromNow;
@@ -131,21 +133,21 @@ export default function ReminderContactsPage() {
     }
   };
 
- if (loading) {
-  return (
-    <div className="reminder-container">
-      <div className="max-w-[1600px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="stats-card skeleton h-32 rounded-2xl"></div>
-          <div className="stats-card skeleton h-32 rounded-2xl"></div>
-          <div className="stats-card skeleton h-32 rounded-2xl"></div>
-        </div>
+  if (loading) {
+    return (
+      <div className="reminder-container">
+        <div className="max-w-[1600px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="stats-card skeleton h-32 rounded-2xl"></div>
+            <div className="stats-card skeleton h-32 rounded-2xl"></div>
+            <div className="stats-card skeleton h-32 rounded-2xl"></div>
+          </div>
 
-        <div className="skeleton h-80 rounded-xl"></div>
+          <div className="skeleton h-80 rounded-xl"></div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 
   return (
@@ -154,15 +156,15 @@ export default function ReminderContactsPage() {
 
         {/* HEADER */}
         <div className="mb-8 flex-shrink-0">
-        {fromInbox && (
-    <button
-      onClick={() => router.push("/inbox")}
-      className="flex items-center gap-2 mb-4 text-emerald-600 hover:text-emerald-700 font-medium"
-    >
-      <ArrowLeft size={18} />
-      Back to Inbox
-    </button>
-  )}
+          {fromInbox && (
+            <button
+              onClick={() => router.push("/inbox")}
+              className="flex items-center gap-2 mb-4 text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              <ArrowLeft size={18} />
+              Back to Inbox
+            </button>
+          )}
           <div className="flex items-center gap-3 mb-3">
             <div
               className="p-3 rounded-xl shadow-lg"
@@ -170,7 +172,7 @@ export default function ReminderContactsPage() {
                 background: "linear-gradient(to bottom right, #10b981, #6ee7b7)",
               }}
             >
-          <Bell className="w-6 h-6 text-white" />
+              <Bell className="w-6 h-6 text-white" />
 
             </div>
             <h1 className="text-4xl font-bold">Reminders</h1>
@@ -278,8 +280,8 @@ export default function ReminderContactsPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredContacts.length > 0 ? (
                   filteredContacts.map((contact: any) => (
-                    <tr 
-                      key={contact.id} 
+                    <tr
+                      key={contact.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                     >
                       <td className="px-6 py-4">
@@ -303,9 +305,17 @@ export default function ReminderContactsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200">
-                          {contact.reminderName}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{contact.reminderName}</span>
+                          <span className={`text-[10px] uppercase font-bold mt-1 inline-block w-fit px-1.5 py-0.5 rounded ${contact.delivered
+                              ? "bg-emerald-100 text-emerald-700"
+                              : contact.triggered
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}>
+                            {contact.delivered ? "Delivered" : contact.triggered ? "Processing" : "Pending"}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">

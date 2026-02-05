@@ -309,28 +309,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Allocate initial credits to the user
-    const INITIAL_CREDITS = parseFloat(
-      process.env.EMBEDDED_SIGNUP_INITIAL_CREDITS || "100",
-    );
-    if (INITIAL_CREDITS > 0) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          walletBalance: { increment: INITIAL_CREDITS },
-        },
-      });
-
-      // Record transaction
-      await prisma.walletTransaction.create({
-        data: {
-          userId,
-          amount: INITIAL_CREDITS,
-          type: "TOPUP",
-          messageId: `embedded_signup_${account.id}_${Date.now()}`,
-        },
-      });
-    }
+    // Initial credits allocation removed at user request.
 
     // ============================================
     // CRITICAL: Subscribe your app to webhooks on the customer's WABA

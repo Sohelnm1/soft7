@@ -32,7 +32,8 @@ export async function GET() {
         email: true,
         phone: true,
         status: true,
-        image: true, // ✅ add this line once you add image field in schema
+        image: true,
+        walletBalance: true,
       },
     });
 
