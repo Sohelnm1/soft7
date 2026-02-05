@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { TemplateService } from "./template.service";
+import { addDays, addWeeks, addMonths, parseISO, format } from "date-fns";
 
 export class ReminderService {
     /**
@@ -7,19 +8,25 @@ export class ReminderService {
      */
     static async runDueReminders() {
         const now = new Date();
-        const currentDate = now.toISOString().split("T")[0]; // yyyy-mm-dd
-        const currentTime = now.toTimeString().slice(0, 5);  // HH:MM
+        const currentDate = format(now, "yyyy-MM-dd");
+        const currentTime = format(now, "HH:mm");
 
         console.log(`[ReminderService] Checking reminders for ${currentDate} ${currentTime}`);
 
         try {
+            // Fetch due reminders: 
+            // 1. Where onDate is today or past (to catch missed ones)
+            // 2. triggered is false
+            // 3. fromTime is less than or equal to now
             const dueReminders = await prisma.contactReminder.findMany({
                 where: {
-                    onDate: currentDate,
+                    onDate: { lte: currentDate },
                     delivered: false,
                     triggered: false,
-                    fromTime: { lte: currentTime },
-                    toTime: { gte: currentTime }
+                    OR: [
+                        { fromTime: { lte: currentTime } },
+                        { allDay: true }
+                    ]
                 },
                 include: {
                     user: true,
@@ -38,6 +45,7 @@ export class ReminderService {
                         continue;
                     }
 
+                    // 1. Send the template
                     await TemplateService.sendTemplate({
                         userId: reminder.userId,
                         contactId: reminder.contactId,
@@ -47,20 +55,53 @@ export class ReminderService {
                         reminderId: reminder.id
                     });
 
-                    await prisma.contactReminder.update({
-                        where: { id: reminder.id },
-                        data: { triggered: true }
-                    });
+                    // 2. Handle Recurrence or Mark as Triggered
+                    if (reminder.scheduleType === "repeated" && reminder.repeatEvery && reminder.repeatUnit && reminder.onDate) {
+                        const currentOnDate = parseISO(reminder.onDate);
+                        let nextDate: Date;
+
+                        switch (reminder.repeatUnit) {
+                            case "weeks":
+                                nextDate = addWeeks(currentOnDate, reminder.repeatEvery);
+                                break;
+                            case "months":
+                                nextDate = addMonths(currentOnDate, reminder.repeatEvery);
+                                break;
+                            case "days":
+                            default:
+                                nextDate = addDays(currentOnDate, reminder.repeatEvery);
+                                break;
+                        }
+
+                        // Update recurring reminder to the next date and reset triggered
+                        await prisma.contactReminder.update({
+                            where: { id: reminder.id },
+                            data: {
+                                onDate: format(nextDate, "yyyy-MM-dd"),
+                                triggered: false,
+                                delivered: false // Reset delivery status for next run
+                            }
+                        });
+                    } else {
+                        // One-time reminder: mark as triggered
+                        await prisma.contactReminder.update({
+                            where: { id: reminder.id },
+                            data: { triggered: true }
+                        });
+                    }
 
                     results.push({ id: reminder.id, status: "success" });
                 } catch (err: any) {
                     console.error(`[ReminderService] Failed to send reminder ${reminder.id}:`, err.message);
                     results.push({ id: reminder.id, status: "error", message: err.message });
 
-                    await prisma.contactReminder.update({
-                        where: { id: reminder.id },
-                        data: { triggered: true }
-                    });
+                    // Still mark as triggered to avoid infinite loops on bad templates for one-time ones
+                    if (reminder.scheduleType !== "repeated") {
+                        await prisma.contactReminder.update({
+                            where: { id: reminder.id },
+                            data: { triggered: true }
+                        });
+                    }
                 }
             }
 

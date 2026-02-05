@@ -624,38 +624,36 @@ export default function InboxPage() {
         </div>
       </div>
 
-      {/* Reminders row */}
+      {/* Reminders Row - Refined with Yellow Pill Tag */}
       {contactReminders.length > 0 && (
-        <div className="px-4 pb-3 space-y-1">
-          {contactReminders.slice(0, 2).map((reminder, idx) => (
-            <div
-              key={`${contact.id}-reminder-${idx}`}
-              className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700"
-            >
-              <Bell
-                size={12}
-                className="text-amber-600 dark:text-amber-400 mt-0.5"
-              />
+        <div className="px-3 pb-2 pt-1 border-t border-slate-50 dark:border-slate-800/50">
+          {contactReminders
+            .filter((r: any) => !r.triggered)
+            .sort((a: any, b: any) => new Date(a.onDate).getTime() - new Date(b.onDate).getTime())
+            .slice(0, 1)
+            .map((reminder, idx) => (
+              <div
+                key={`${contact.id}-reminder-${idx}`}
+                className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-full border border-amber-200 dark:border-amber-700 w-fit"
+                style={{
+                  background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
+                  boxShadow: "0 1px 2px rgba(245, 158, 11, 0.1)"
+                }}
+              >
+                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shadow-sm">
+                  <Bell
+                    size={11}
+                    className="text-white"
+                  />
+                </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                  {reminder.message?.substring(0, 40)}
-                  {reminder.message?.length > 40 ? "..." : ""}
-                </p>
-
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  {new Date(reminder.onDate).toLocaleDateString()} at{" "}
-                  {reminder.fromTime || "All Day"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                    {reminder.onDate} at {reminder.fromTime || "All Day"}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-
-          {contactReminders.length > 2 && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 px-2">
-              +{contactReminders.length - 2} more reminders
-            </p>
-          )}
+            ))}
         </div>
       )}
     </div>
