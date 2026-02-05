@@ -19,6 +19,10 @@ app.prepare().then(() => {
   // Initialize Redis bridge for worker -> socket communication
   initSocketBridge(io);
 
+  // Initialize background jobs
+  const { initReminderCron } = require("./src/jobs/reminderCron.ts");
+  initReminderCron();
+
   server.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
     console.log(`📡 Socket.IO ready for connections`);

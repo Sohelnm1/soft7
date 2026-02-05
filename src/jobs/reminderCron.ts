@@ -1,17 +1,20 @@
-// import cron from "node-cron";
-// import fetch from "node-fetch";
+import cron from "node-cron";
+import { ReminderService } from "../services/reminder.service";
 
-// const CRON_URL = `${process.env.NGROK_URL}/api/contact-reminders/run`;
+/**
+ * Background job that runs every minute to check for pending contact reminders.
+ */
+export function initReminderCron() {
+    console.log("⏰ Initializing Reminder Cron Job (Every 1 minute)");
 
-// cron.schedule("*/1 * * * *", async () => {
-//   console.log("⏳ Running reminder check...");
-
-//   try {
-//     const res = await fetch(CRON_URL);
-//     const data = await res.json();
-
-//     console.log("Reminder result:", data);
-//   } catch (err) {
-//     console.error("Cron error:", err);
-//   }
-// });
+    cron.schedule("* * * * *", async () => {
+        try {
+            const result = await ReminderService.runDueReminders();
+            if (result.sent > 0) {
+                console.log(`[ReminderCron] Processed ${result.sent} reminders.`);
+            }
+        } catch (err) {
+            console.error("[ReminderCron] Error in execution:", err);
+        }
+    });
+}
