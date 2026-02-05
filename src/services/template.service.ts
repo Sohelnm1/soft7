@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { getTemplateVariables, formatTemplateParameters } from "@/lib/template-utils";
+import { prisma } from "../lib/prisma";
+import { getTemplateVariables, formatTemplateParameters } from "../lib/template-utils";
 import { WalletService } from "./wallet.service";
 
 export interface SendTemplateOptions {
