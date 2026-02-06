@@ -7,11 +7,26 @@ export class ReminderService {
      * Checks for due reminders and sends them using TemplateService.
      */
     static async runDueReminders() {
+        // Force Asia/Kolkata (IST) timezone for scheduling logic
         const now = new Date();
-        const currentDate = format(now, "yyyy-MM-dd");
-        const currentTime = format(now, "HH:mm");
+        const options: Intl.DateTimeFormatOptions = {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        };
 
-        console.log(`[ReminderService] Checking reminders for ${currentDate} ${currentTime}`);
+        const formatter = new Intl.DateTimeFormat("en-GB", options);
+        const parts = formatter.formatToParts(now);
+        const find = (type: string) => parts.find(p => p.type === type)?.value;
+
+        const currentDate = `${find("year")}-${find("month")}-${find("day")}`;
+        const currentTime = `${find("hour")}:${find("minute")}`;
+
+        console.log(`[ReminderService] Checking reminders for ${currentDate} ${currentTime} (IST)`);
 
         try {
             // Fetch due reminders: 
