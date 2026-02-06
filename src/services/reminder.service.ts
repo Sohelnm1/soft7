@@ -15,17 +15,25 @@ export class ReminderService {
 
         try {
             // Fetch due reminders: 
-            // 1. Where onDate is today or past (to catch missed ones)
-            // 2. triggered is false
-            // 3. fromTime is less than or equal to now
+            // 1. Reminders from past dates that haven't triggered (Catch-up)
+            // 2. Reminders from today where time has arrived
             const dueReminders = await prisma.contactReminder.findMany({
                 where: {
-                    onDate: { lte: currentDate },
                     delivered: false,
                     triggered: false,
                     OR: [
-                        { fromTime: { lte: currentTime } },
-                        { allDay: true }
+                        { onDate: { lt: currentDate } }, // Any date before today
+                        {
+                            AND: [
+                                { onDate: currentDate },
+                                {
+                                    OR: [
+                                        { fromTime: { lte: currentTime } },
+                                        { allDay: true }
+                                    ]
+                                }
+                            ]
+                        }
                     ]
                 },
                 include: {
@@ -34,20 +42,28 @@ export class ReminderService {
                 }
             });
 
-            if (dueReminders.length === 0) return { status: "success", sent: 0 };
+            if
+                (dueReminders.length === 0) return { status: "success", sent: 0 };
+
 
             const results = [];
             for (const reminder of dueReminders) {
+
                 try {
                     const r = reminder as any;
+
                     if (!r.templateName) {
                         console.warn(`[ReminderService] Reminder ${reminder.id} has no templateName, skipping.`);
+
                         continue;
                     }
 
+
                     // 1. Send the template
+
                     await TemplateService.sendTemplate({
                         userId: reminder.userId,
+
                         contactId: reminder.contactId,
                         templateName: r.templateName,
                         language: r.language || "en",
